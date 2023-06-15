@@ -1,0 +1,20 @@
+Package: OmicsMLRepoCuration
+Type: Package
+Title: Help metadata curation with ontology
+Version: 0.1.0
+Authors@R: person("Sehyun", "Oh", email = "shbrief@gmail.com", role = c("aut","cre"))
+Maintainer: Sehyun Oh <shbrief@gmail.com>
+Description: This package mainly supports metadata harmonization and curation
+    processes to make omics data AI/ML applications. Its focus is in the 
+    incorporation of the controlled language (i.e., ontology) and support for
+    the comparable analysis across datasets. 
+License: GPL-3
+Depends: 
+    R (>= 4.2.0)
+Imports:
+    rols,
+    dplyr
+Suggests:
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
