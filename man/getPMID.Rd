@@ -4,7 +4,7 @@
 \alias{getPMID}
 \title{Extract PMID for a given variable}
 \usage{
-getPMID(db, key, value)
+getPMID(db = "cMD", key, value)
 }
 \arguments{
 \item{db}{Character(1). Currently only "cMD" is supported.}
