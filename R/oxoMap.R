@@ -7,7 +7,7 @@
 #' @importFrom httr2 request req_headers resp_body_json req_perform
 #'
 #' @param term_ids A character vector of term ids to retrieve mappings for
-#' @param target_ontology A character (1). The target ontology library to
+#' @param target_ontology Optional character (1). The target ontology library to
 #' map the `term_ids` to.
 #' @param mapping_distance Optional. Mapping distance as an integer, 1
 #' (default), 2, or 3.
@@ -19,7 +19,7 @@
 #'               "HP:0001824", "MONDO:0010200", "NCIT:C122328")
 #' oxoMap(term_ids, "NCIT")
 #'
-oxoMap <- function(term_ids, target_ontology, mapping_distance = 1) {
+oxoMap <- function(term_ids, target_ontology = "none", mapping_distance = 1) {
   # Validate input
   stopifnot(is.character(term_ids),
             is.character(target_ontology),
@@ -31,13 +31,19 @@ oxoMap <- function(term_ids, target_ontology, mapping_distance = 1) {
   target_ontology <- as.list(target_ontology)
 
   # Prepare request
+  body_json <- list(ids = term_ids,
+                    inputSource = NULL,
+                    mappingTarget = target_ontology,
+                    distance = mapping_distance)
+  
+  if (target_ontology == "none") {
+      body_json["mappingTarget"] <- NULL
+  }
+  
   req <- request("https://www.ebi.ac.uk/spot/oxo/api/search?size=200") %>%
     req_headers("Content-Type" = "application/json",
                 "Accept" = "application/json") %>%
-    req_body_json(list(ids = term_ids,
-                       inputSource = NULL,
-                       mappingTarget = target_ontology,
-                       distance = mapping_distance))
+    req_body_json(body_json)
 
   # Perform request
   resp <- req_perform(req)
