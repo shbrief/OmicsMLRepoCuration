@@ -43,6 +43,11 @@ library(igraph)
             jstree <<- "no tree"
         })
         
+        if (!is.character(jstree)) {
+            print("Unable to access tree, proceeding to next term")
+            jstree <- "no tree"
+        }
+        
         ## Add link to list, named by term id
         all_trees <- c(all_trees, jstree)
         names(all_trees)[i] <- terms[i]
@@ -96,8 +101,30 @@ LCA <- function(graph, vex) {
     return(lcas)
 }
 
+#' Selects representative nodes for a cluster when LCAs are not available
+#' 
+#' @importFrom igraph degree subgraph dfs
+#' 
+#' @param graph An igraph network object.
+#' @param vex Character vector of term ids that make up a single cluster.
+#' @param ovex Character vector of original term ids present in the cluster.
+#' 
+#' @return Character vector of representative term ids.
+#' 
+#' @examples
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+#' net <- read.csv(file.path(dir, "sample_net.csv"))
 #'
-bestRoots <- function(graph, vex, ovex) {
+#' graph <- igraph::graph_from_data_frame(d = net,
+#' vertices = unique(unlist(net)))
+#' 
+#' vex <- c("NCIT:C78274", "NCIT:C270", "NCIT:C783", "NCIT:C93038",
+#' "NCIT:C47793", "NCIT:C247", "NCIT:C62002")
+#' ovex <- c("NCIT:C270", "NCIT:C93038")
+#'
+#' .bestRoots(graph = graph, vex = vex, ovex = ovex)
+#'
+.bestRoots <- function(graph, vex, ovex) {
     odegs <- degree(subgraph(graph, vex), mode = "out")
     idegs <- degree(subgraph(graph, vex), mode = "in")
     oordered <- odegs[order(odegs, decreasing = TRUE)]
@@ -108,45 +135,122 @@ bestRoots <- function(graph, vex, ovex) {
     children <- lapply(roots, function(x) names(dfs(graph,
                                                     x,
                                                     mode = "out",
-                                                    unreachable = FALSE)$order[-1]))
+                                                    unreachable = FALSE)$order))
     
     i <- 0
+    best_roots <- c()
     while(length(ovex) > 0 & i < length(roots)) {
         i <- i + 1
         cur_root <- children[[i]]
+        ncov <- sum(ovex %in% cur_root)
+        
+        if (ncov > 1) {
+            best_roots <- c(best_roots, roots[i])
+        } else if (ncov == 1) {
+            best_roots <- c(best_roots, ovex[ovex %in% cur_root])
+        }
+        
         ovex <- ovex[!ovex %in% cur_root]
     }
     
-    best_roots <- c(roots[1:i], ovex)
+    best_roots <- c(best_roots, ovex)
     return(best_roots)
 }
 
+#' Removes nodes that are descendants of already chosen nodes
+#' 
+#' @importFrom igraph dfs
+#' 
+#' @param graph An igraph network object.
+#' @param nodes Character vector; ids of nodes to check.
+#' 
+#' @return Character vector; consolidated list of ids.
+#' 
+#' @examples
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+#' net <- read.csv(file.path(dir, "sample_net.csv"))
 #'
-consolidateNodes <- function(graph, vex) {
-    ancs <- lapply(vex, function(x) names(dfs(graph,
+#' graph <- igraph::graph_from_data_frame(d = net,
+#' vertices = unique(unlist(net)))
+#' 
+#' nodes <- c("NCIT:C78274", "NCIT:C29711", "NCIT:C254", "NCIT:C29249",
+#' "NCIT:C47639", "NCIT:C78272")
+#' 
+#' .consolidateNodes(graph = graph, nodes = nodes)
+#'
+.consolidateNodes <- function(graph, nodes) {
+    ancs <- lapply(nodes, function(x) names(dfs(graph,
                                               x,
                                               mode = "in",
                                               unreachable = FALSE)$order[-1]))
-    child <- unlist(lapply(ancs, function(x) any(x %in% vex)))
-    nodes <- vex[!child]
-    return(nodes)
+    child <- unlist(lapply(ancs, function(x) any(x %in% nodes)))
+    fnodes <- nodes[!child]
+    return(fnodes)
 }
 
+#' Retrieves all original terms covered by a given node within an igraph network
+#' object.
+#' 
+#' @importFrom igraph dfs
+#' 
+#' @param graph An igraph network object.
+#' @param node Character string; id of node to check descendants of.
+#' @param original_terms Character vector; ids of original terms to check
+#' coverage of.
+#' 
+#' @return Character vector of original terms covered by "node."
+#' 
+#' @examples
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+#' net <- read.csv(file.path(dir, "sample_net.csv"))
 #'
-getDescs <- function(graph, node, ovex) {
+#' graph <- igraph::graph_from_data_frame(d = net,
+#' vertices = unique(unlist(net)))
+#' 
+#' original_terms <- c("NCIT:C29711", "NCIT:C270", "NCIT:C250", "NCIT:C47639",
+#' "NCIT:C29249", "NCIT:C983", "NCIT:C247", "NCIT:C47384", "NCIT:C62002",
+#' "NCIT:C281")
+#'
+#' .getDescs(graph = graph, node = "NCIT:C78274",
+#' original_terms = original_terms)
+#' 
+.getDescs <- function(graph, node, original_terms) {
     children <- names(dfs(graph,
                           node,
                           mode = "out",
                           unreachable = FALSE)$order)
-    odescs <- children[children %in% ovex]
+    odescs <- children[children %in% original_terms]
     return(odescs)
 }
 
+#' Creates igraph network object from a dataframe network representation
+#' 
+#' @importFrom igraph graph_from_data_frame
+#' @importFrom dplyr mutate case_when
+#' 
+#' @param net Dataframe containing a symbolic edge list of a directed network in
+#' the first two columns. Edges are directed from the first column to the second
+#' column. Additional columns are considered as edge attributes.
+#' @param original_terms A character vector of ontology terms to ensure
+#' coverage of.
+#' 
+#' @return An igraph network object with vertex attribute "type." "type" values
+#' include "root," "original," and "bridge."
+#' 
+#' @examples
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+#' net <- read.csv(file.path(dir, "sample_net.csv"))
+#' 
+#' original_terms <- c("NCIT:C29711", "NCIT:C270", "NCIT:C250", "NCIT:C47639",
+#' "NCIT:C29249", "NCIT:C983", "NCIT:C247", "NCIT:C47384", "NCIT:C62002",
+#' "NCIT:C281")
+#' 
+#' .createGraph(net = net, original_terms = original_terms)
 #'
-createGraph <- function(net, original_terms) {
+.createGraph <- function(net, original_terms) {
     vex <- unique(unlist(net))
     ovex <- original_terms
-    root <- vex[!vex %in% net$to]
+    root <- vex[!vex %in% net[,2]]
     
     eframe <- net %>%
         mutate(weight = 1)
@@ -160,19 +264,101 @@ createGraph <- function(net, original_terms) {
     return(network)
 }
 
-#' Selects representative notes for a network of ontology terms using igraph
+#' Detects nodes that cover greater than a certain percentage of the network
+#' 
+#' @importFrom igraph V dfs
+#' 
+#' @param netgraph igraph network object of ontology term IDs.
+#' @param max_nodes Integer to indicate number of covered nodes that makes a node
+#' "high-traffic."
+#' 
+#' @return A character vector of high-traffic node ids.
+#' 
+#' @examples
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+#' net <- read.csv(file.path(dir, "sample_net.csv"))
+#' 
+#' netgraph <- igraph::graph_from_data_frame(d = net,
+#' vertices = unique(unlist(net)))
+#' 
+#' .busyNodes(netgraph = netgraph, max_nodes = 20)
+#'
+.busyNodes <- function(netgraph, max_nodes) {
+    
+    ## Use descendant number cutoff to identify high-traffic nodes
+    dnums <- unlist(lapply(V(netgraph), function(x)
+        length(dfs(netgraph, x, mode = "out", unreachable = FALSE)$order)))
+    remnodes <- names(which(dnums > max_nodes))
+    return(remnodes)
+}
+
+#' Retrieves ontology terms and database information for given term ids
+#'
+#' @import rols
+#' 
+#' @param onto A character vector. Name(s) of ontologies that terms are from.
+#' @param node A character vector of ontology term IDs.
+#' 
+#' @return Dataframe of submitted term IDs, term names, and term ontologies
+#' 
+#' @examples
+#' onto <- c("FOODON", "CHEBI", "NCIT", "NCIT", "NCIT", "SNOMED", "SNOMED",
+#' "SNOMED")
+#' node <- c("FOODON:03600010", "CHEBI:166822", "NCIT:C1908", "NCIT:C41132",
+#' "NCIT:C25218", "SNOMED:438451000124100", "SNOMED:372740001",
+#' "SNOMED:48070003")
+#' 
+#' .displayNodes(onto = onto, node = node)
+#' 
+.displayNodes <- function(onto, node) {
+    # Initialize dataframe to store term information
+    dmat <- as.data.frame(matrix(nrow = sum(lengths(node)),
+                                 ncol = 3,
+                                 dimnames = list(c(), c("ontology_term",
+                                                        "ontology_term_id",
+                                                        "original_term_ontology"))))
+    
+    # Save individual picked nodes with their respective ontologies
+    dmat$ontology_term_id <- unname(unlist(node))
+    dmat$original_term_ontology <- onto
+    
+    # Loop through picked nodes and get additional information
+    for (i in 1:nrow(dmat)) {
+        curont <- dmat$original_term_ontology[i]
+        curid <- dmat$ontology_term_id[i]
+        print(paste0("Retrieving info for picked node ", curid))
+        
+        qry <- OlsSearch(q = curid, exact = TRUE)
+        qry <- olsSearch(qry)
+        qdrf <- as(qry, "data.frame")
+        
+        if (curont %in% qdrf$ontology_prefix) {
+            record <- qdrf[qdrf$ontology_prefix == curont, ][1,]
+        } else if (TRUE %in% qdrf$is_defining_ontology) {
+            record <- qdrf[qdrf$is_defining_ontology == TRUE, ]
+        } else {
+            record <- qdrf[1, ]
+        }
+        dmat$ontology_term[i] <- record$label
+    }
+    return(dmat)
+}
+
+#' Selects representative nodes for a network of ontology terms using igraph
 #' clustering functionality
 #' 
-#' @importFrom igraph degree V delete_vertices cluster_fast_greedy as.undirected communities
+#' @importFrom igraph delete_vertices cluster_fast_greedy as.undirected communities
 #' 
 #' @param netgraph igraph network object of ontology term IDs.
 #' @param original_terms A character vector of ontology term IDs to ensure
 #' coverage of.
-#' @param cutoff Optional. Float to indicate percentage of network coverage that
-#' makes a node "high-traffic." Defaults to 0.25.
+#' @param max_nodes Integer to indicate number of covered nodes that makes a node
+#' "high-traffic."
+#' 
+#' @return A character vector of representative nodes.
 #' 
 #' @examples
-#' dir <- system.file("extdata", package="OmicsMLRepoCuration")
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' net <- read.csv(file.path(dir, "sample_net.csv"))
 #' 
 #' netgraph <- igraph::graph_from_data_frame(d = net,
@@ -181,13 +367,14 @@ createGraph <- function(net, original_terms) {
 #' "NCIT:C29249", "NCIT:C983", "NCIT:C247", "NCIT:C47384", "NCIT:C62002",
 #' "NCIT:C281")
 #' 
-#' .clusterNodes(netgraph = netgraph, original_terms = original_terms)
+#' .clusterNodes(netgraph = netgraph, original_terms = original_terms,
+#' max_nodes = 20)
 #'
-.clusterNodes <- function(netgraph, original_terms, cutoff = 0.25) {
+.clusterNodes <- function(netgraph, original_terms, max_nodes) {
     
-    ## Use edge weight cutoff to remove high-traffic nodes    
-    remnodes <- names(which(degree(netgraph, mode = "out")
-                            > (cutoff * length(V(netgraph)))))
+    ## Use descendant number cutoff to remove high-traffic nodes
+    bnodes <- .busyNodes(netgraph, max_nodes)
+    remnodes <- bnodes[!bnodes %in% original_terms]
     remnet <- delete_vertices(netgraph, remnodes)
     
     ## Cluster network
@@ -206,7 +393,7 @@ createGraph <- function(net, original_terms) {
                                          function(x) any(x %in% remnodes)))))
     rem_coms <- coms[remids]
     rem_ocoms <- original_coms[remids]
-    best_coms <- mapply(function(c, o) bestRoots(netgraph, c, o),
+    best_coms <- mapply(function(c, o) .bestRoots(netgraph, c, o),
                         rem_coms,
                         rem_ocoms,
                         SIMPLIFY = FALSE)
@@ -214,25 +401,26 @@ createGraph <- function(net, original_terms) {
     
     ## Consolidate redundant nodes
     nodes <- unique(unname(unlist(com_lcas)))
-    cnodes <- consolidateNodes(netgraph, nodes)
+    cnodes <- .consolidateNodes(netgraph, nodes)
     return(cnodes)
 }
 
 #' Retrieves ideal representative nodes for a vector of ontology term ids
 #' 
-#' @importFrom tidyverse distinct compact
+#' @importFrom dplyr distinct
+#' @importFrom plyr compact
 #' @importFrom igraph V
 #' 
 #' @param ids Character vector of term ids.
 #' 
-#' @return A Dataframe of chosen nodes including information on number of 
+#' @return A dataframe of chosen nodes including information on number of 
 #' original terms covered.
 #' 
 #' @examples
 #' ids <- c("CHEBI:166822", "NCIT:C47639", "FOODON:03600010", "NCIT:C29249",
 #' "NCIT:C983", "NCIT:C247", "NCIT:C47384", "NCIT:C62002", "NCIT:C250",
 #' "NCIT:C270", "NCIT:C94631", "NCIT:C281", "NCIT:C29711", "NCIT:C270")
-#' mapNodes(ids)
+#' mapNodes(ids = ids, cutoff = 0.25)
 #' 
 mapNodes <- function(ids, cutoff = 0.25) {
     
@@ -265,50 +453,74 @@ mapNodes <- function(ids, cutoff = 0.25) {
     ## Set up and group networks
     tree_nets <- lapply(tree_frames, function(x) lapply(x, createNetwork))
     tree_groups <- lapply(tree_nets, groupRoots)
-    netnames <- unlist(lapply(tree_groups, names), use.names = FALSE)
     big_nets <- unlist(lapply(tree_groups, function(x) lapply(x, bind_rows)),
                        recursive = FALSE)
-    names(big_nets) <- netnames
-    grouped_terms <- lapply(big_nets, function(x) unique(unlist(x)))
+    names(big_nets) <- lapply(names(big_nets), function(x)
+        unlist(strsplit(x, split  = "\\."))[2])
+    comp_nets <- map(split(big_nets, names(big_nets)), bind_rows)
+    grouped_terms <- lapply(comp_nets, function(x) unique(unlist(x)))
     grouped_originals <- lapply(grouped_terms, function(x) x[x %in% ids])
-    netgraphs <- mapply(function(n, o) createGraph(n, o),
-                        big_nets, grouped_originals, SIMPLIFY = FALSE)
+    netgraphs <- mapply(function(n, o) .createGraph(n, o),
+                        comp_nets, grouped_originals, SIMPLIFY = FALSE)
+    
+    #test
+    ontos <- unlist(lapply(names(netgraphs), function(x) unlist(strsplit(x, split = ":"))[1]))
+    nums <- lapply(netgraphs, function(x) length(V(x)))
+    names(nums) <- ontos
+    if (any(duplicated(ontos))) {
+        gnums <- lapply(unstack(stack(nums, drop = FALSE)), sum)
+        numall <- gnums[ontos]
+    } else {
+        numall <- nums
+    }
+
     
     ## Separate different-sized graphs
     ## for either LCA or cluster-based node selection
     single <- lengths(grouped_originals) == 1
-    cutoffs <- unlist(lapply(netgraphs, function(x) length(V(x)) * cutoff))
-    test_cuts <- mapply(function(n, c)
-        length(names(which(degree(n, mode = "out") > c))), netgraphs, cutoffs,
-        SIMPLIFY = FALSE)
+    #cutoffs <- unlist(lapply(netgraphs, function(x) length(V(x)) * cutoff))
+    #test_cuts <- mapply(function(n, c)
+    #    length(names(which(degree(n, mode = "out") > c))), netgraphs, cutoffs,
+    #    SIMPLIFY = FALSE)
+    #test_cuts <- lapply(netgraphs, function(x) length(.busyNodes(x, cutoff)))
+    test_cuts <- mapply(function(n, m) length(.busyNodes(n, m * cutoff)),
+                        netgraphs,
+                        numall,
+                        SIMPLIFY = FALSE)
     clust <- test_cuts != 0
     
     cluster_ids <- which(!single & clust)
+    lca_ids <- seq_along(netgraphs)[-cluster_ids]
+    if (length(cluster_ids) == 0) {
+        cluster_ids <- c(0)
+        lca_ids <- seq_along(netgraphs)
+    }
     
-    cluster_nets <- netgraphs[cluster_ids]
-    lca_nets <- netgraphs[-cluster_ids]
+    #cluster_nets <- netgraphs[cluster_ids]
+    #lca_nets <- netgraphs[-cluster_ids]
     
     ## Select nodes for LCA-compatible graphs
     lca_nodes <- mapply(function(g, o) LCA(g, o),
-                        netgraphs[-cluster_ids, drop = FALSE],
-                        grouped_originals[-cluster_ids, drop = FALSE],
+                        netgraphs[lca_ids, drop = FALSE],
+                        grouped_originals[lca_ids, drop = FALSE],
                         SIMPLIFY = FALSE)
     
     ## Select nodes for cluster-compatible graphs
-    cluster_nodes <- mapply(function(g, o) .clusterNodes(g, o),
+    cluster_nodes <- mapply(function(g, o, m) .clusterNodes(g, o, m * cutoff),
                             netgraphs[cluster_ids, drop = FALSE],
                             grouped_originals[cluster_ids, drop = FALSE],
+                            numall[cluster_ids, drop = FALSE],
                             SIMPLIFY = FALSE)
     
     ## Return nodes and represented original terms
     all_nodes <- as.list(rep(NA, length(netgraphs)))
-    all_nodes[-cluster_ids] <- lca_nodes
+    all_nodes[lca_ids] <- lca_nodes
     all_nodes[cluster_ids] <- cluster_nodes
     names(all_nodes) <- names(netgraphs)
     
     descs <- mapply(function(g, n, o)
         sapply(n, function(x)
-            getDescs(g, x, o),
+            .getDescs(g, x, o),
             simplify = FALSE,
             USE.NAMES = TRUE),
         netgraphs,
@@ -323,9 +535,10 @@ mapNodes <- function(ids, cutoff = 0.25) {
     ## Get information on picked nodes and save as dataframe
     node_dbs <- unlist(lapply(names(nodemap), get_ontologies))
     nmat <- .displayNodes(node_dbs, names(nodemap))
-    nmat$original_covered <- nodemap
+    nmat$original_covered <- nodemap %>%
+        mutate(original_covered = paste(original_covered, collapse = ";"))
     nmat$num_original_covered <- lengths(nodemap)
-    nmat$num_original <- length(ids)
+    nmat$num_original <- length(unique(ids))
     
     return(nmat)
 }
