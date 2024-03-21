@@ -1,8 +1,3 @@
-library(rols)
-library(tidyverse)
-library(jsonlite)
-library(igraph)
-
 #' Extract urls for JSON trees from rols Term object
 #'
 #' @importFrom rols Ontology Term
@@ -55,16 +50,35 @@ library(igraph)
     return(all_trees)
 }
 
+#' Transforms rols tree representation into igraph-compatible dataframe network
+#' representation
+#' 
+#' @importFrom dplyr rowwise mutate select rename filter
+#' @importFrom plyr mapvalues
+#' 
+#' @param tree_frame rols JSON tree in dataframe format as created by
+#' jsonlite::fromJSON.
+#' 
+#' @return Dataframe containing a symbolic edge list of a directed network in
+#' the first two columns. Edges are directed from the first column to the second
+#' column. Additional columns are considered as edge attributes.
+#' 
+#' @examples
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+#' tree_frame <- read.csv(file.path(dir, "sample_treeframe.csv"))  
 #'
-createNetwork <- function(tree_frame) {
+#' .createNetwork(tree_frame = tree_frame)
+#'
+.createNetwork <- function(tree_frame) {
     
-    ## Create mapping between term IDs and 
+    ## Create mapping between ontology IDs and tree IDs
     map <- tree_frame %>%
         rowwise() %>%
         mutate(term = unlist(strsplit(iri, split = "/"))[5]) %>%
         mutate(term = gsub("_", ":", term)) %>%
         select(id, term)
     
+    ## Use mapping to build net
     net <- tree_frame %>%
         select(parent, id) %>%
         rename(from = parent,
@@ -75,20 +89,68 @@ createNetwork <- function(tree_frame) {
     return(net)
 }
 
+#' Combines dataframe network representations that have the same roots
+#' 
+#' @param nets List of dataframes each containing a symbolic edge list of a
+#' directed network in the first two columns. Edges are directed from the first
+#' column to the second column. Additional columns are considered as edge
+#' attributes.
+#' 
+#' @return List of grouped dataframe network representations.
+#' 
+#' @examples
+#' nets <- list(`NCIT:C94631` = structure(list(from = c("NCIT:C43431",
+#' "NCIT:C16203", "NCIT:C25218", "NCIT:C49236", "NCIT:C15986", "NCIT:C15511",
+#' "NCIT:C16119"), to = c("NCIT:C16203", "NCIT:C25218", "NCIT:C49236",
+#' "NCIT:C15986", "NCIT:C15511", "NCIT:C16119", "NCIT:C94631")),
+#' class = "data.frame", row.names = c(NA, -7L)),
+#' `NCIT:C93322` = structure(list(from = c("NCIT:C43431", "NCIT:C16203",
+#' "NCIT:C25218", "NCIT:C67022"), to = c("NCIT:C16203", "NCIT:C25218",
+#' "NCIT:C67022", "NCIT:C93322")), class = "data.frame", row.names = c(NA, -4L)))
 #'
-groupRoots <- function(nets) {
-    fac <- as.factor(unlist(lapply(nets, function(x) x$from[1])))
+#' .groupRoots(nets) 
+#'
+.groupRoots <- function(nets) {
+    
+    ## Get roots for each net as a factor and use to group
+    fac <- as.factor(unlist(lapply(nets, function(x) x[1, 1])))
     groups <- split(nets, fac)
     return(groups)
 }
 
+#' Retrieves lowest common ancestor or group of ancestors for a given set of
+#' nodes within an igraph network object
+#' 
+#' @importFrom igraph dfs degree subgraph distances
+#' 
+#' @param graph An igraph network object.
+#' @param vex Character vector of term ids to find lowest common ancestor(s) for.
+#' 
+#' @return Character vector of lowest common ancestor(s).
+#' 
+#' @examples
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+#' net <- read.csv(file.path(dir, "sample_net.csv"))
 #'
-LCA <- function(graph, vex) {
+#' graph <- igraph::graph_from_data_frame(d = net,
+#' vertices = unique(unlist(net)))
+#' 
+#' vex <- c("NCIT:C270", "NCIT:C93038")
+#'
+#' .LCA(graph = graph, vex = vex)
+#' 
+.LCA <- function(graph, vex) {
+    
+    ## Get ancestors of each given term
     ancs <- lapply(vex, function(x) dfs(graph,
                                         x,
                                         mode = "in",
                                         unreachable = FALSE)$order)
+    
+    ## Find intersecting ancestors as LCA candidates
     common_ancs <- Reduce(intersect, ancs)
+    
+    ## Compare candidate degrees and distances from root to find LCA(s)
     odegs <- degree(subgraph(graph, common_ancs), mode = "out")
     leaves <- names(odegs)[odegs == 0]
     idegs <- degree(graph, mode = "in")
@@ -125,6 +187,8 @@ LCA <- function(graph, vex) {
 #' .bestRoots(graph = graph, vex = vex, ovex = ovex)
 #'
 .bestRoots <- function(graph, vex, ovex) {
+    
+    ## Compare degrees of all cluster nodes to find roots
     odegs <- degree(subgraph(graph, vex), mode = "out")
     idegs <- degree(subgraph(graph, vex), mode = "in")
     oordered <- odegs[order(odegs, decreasing = TRUE)]
@@ -132,11 +196,13 @@ LCA <- function(graph, vex) {
     
     roots <- names(iordered)[iordered == 0]
     
+    ## Retrieve all descendants of roots
     children <- lapply(roots, function(x) names(dfs(graph,
                                                     x,
                                                     mode = "out",
                                                     unreachable = FALSE)$order))
     
+    ## Move through roots until all original terms are covered
     i <- 0
     best_roots <- c()
     while(length(ovex) > 0 & i < length(roots)) {
@@ -179,10 +245,14 @@ LCA <- function(graph, vex) {
 #' .consolidateNodes(graph = graph, nodes = nodes)
 #'
 .consolidateNodes <- function(graph, nodes) {
+    
+    ## Retrieve all ancestors of given nodes
     ancs <- lapply(nodes, function(x) names(dfs(graph,
                                               x,
                                               mode = "in",
                                               unreachable = FALSE)$order[-1]))
+    
+    ## Remove given node if another given node is an ancestor
     child <- unlist(lapply(ancs, function(x) any(x %in% nodes)))
     fnodes <- nodes[!child]
     return(fnodes)
@@ -215,10 +285,14 @@ LCA <- function(graph, vex) {
 #' original_terms = original_terms)
 #' 
 .getDescs <- function(graph, node, original_terms) {
+    
+    ## Retrieve all descendants of given node
     children <- names(dfs(graph,
                           node,
                           mode = "out",
                           unreachable = FALSE)$order)
+    
+    ## Return all original terms that are present in "children"
     odescs <- children[children %in% original_terms]
     return(odescs)
 }
@@ -248,18 +322,25 @@ LCA <- function(graph, vex) {
 #' .createGraph(net = net, original_terms = original_terms)
 #'
 .createGraph <- function(net, original_terms) {
+    
+    ## Get different types of nodes
     vex <- unique(unlist(net))
     ovex <- original_terms
     root <- vex[!vex %in% net[,2]]
     
+    ## Prepare edge dataframe with "weight" attribute
     eframe <- net %>%
         mutate(weight = 1)
+    
+    ## Prepare vertex dataframe with "type" attribute
     vframe <- data.frame(vex = vex,
                          type = NA)
     vframe <- vframe %>%
         mutate(type = case_when(vex == root ~ "root",
                                 vex %in% ovex ~ "original",
                                 .default = "bridge"))
+    
+    ## Return igraph network object
     network <- graph_from_data_frame(d = eframe, vertices = vframe)
     return(network)
 }
@@ -269,8 +350,8 @@ LCA <- function(graph, vex) {
 #' @importFrom igraph V dfs
 #' 
 #' @param netgraph igraph network object of ontology term IDs.
-#' @param max_nodes Integer to indicate number of covered nodes that makes a node
-#' "high-traffic."
+#' @param max_nodes Integer to indicate number of covered nodes that makes a
+#' node "high-traffic."
 #' 
 #' @return A character vector of high-traffic node ids.
 #' 
@@ -311,18 +392,19 @@ LCA <- function(graph, vex) {
 #' .displayNodes(onto = onto, node = node)
 #' 
 .displayNodes <- function(onto, node) {
-    # Initialize dataframe to store term information
+    
+    ## Initialize dataframe to store term information
     dmat <- as.data.frame(matrix(nrow = sum(lengths(node)),
                                  ncol = 3,
                                  dimnames = list(c(), c("ontology_term",
                                                         "ontology_term_id",
                                                         "original_term_ontology"))))
     
-    # Save individual picked nodes with their respective ontologies
+    ## Save individual picked nodes with their respective ontologies
     dmat$ontology_term_id <- unname(unlist(node))
     dmat$original_term_ontology <- onto
     
-    # Loop through picked nodes and get additional information
+    ## Loop through picked nodes and get additional information
     for (i in 1:nrow(dmat)) {
         curont <- dmat$original_term_ontology[i]
         curid <- dmat$ontology_term_id[i]
@@ -387,7 +469,7 @@ LCA <- function(graph, vex) {
     original_coms[emptyids] <- NULL
     
     ## Get representative nodes for each cluster
-    com_lcas <- lapply(original_coms, function(x) LCA(netgraph, x))
+    com_lcas <- lapply(original_coms, function(x) .LCA(netgraph, x))
     
     remids <- which(unname(unlist(lapply(com_lcas,
                                          function(x) any(x %in% remnodes)))))
@@ -420,6 +502,7 @@ LCA <- function(graph, vex) {
 #' ids <- c("CHEBI:166822", "NCIT:C47639", "FOODON:03600010", "NCIT:C29249",
 #' "NCIT:C983", "NCIT:C247", "NCIT:C47384", "NCIT:C62002", "NCIT:C250",
 #' "NCIT:C270", "NCIT:C94631", "NCIT:C281", "NCIT:C29711", "NCIT:C270")
+#' 
 #' mapNodes(ids = ids, cutoff = 0.25)
 #' 
 mapNodes <- function(ids, cutoff = 0.25) {
@@ -451,8 +534,8 @@ mapNodes <- function(ids, cutoff = 0.25) {
     })
     
     ## Set up and group networks
-    tree_nets <- lapply(tree_frames, function(x) lapply(x, createNetwork))
-    tree_groups <- lapply(tree_nets, groupRoots)
+    tree_nets <- lapply(tree_frames, function(x) lapply(x, .createNetwork))
+    tree_groups <- lapply(tree_nets, .groupRoots)
     big_nets <- unlist(lapply(tree_groups, function(x) lapply(x, bind_rows)),
                        recursive = FALSE)
     names(big_nets) <- lapply(names(big_nets), function(x)
@@ -463,7 +546,8 @@ mapNodes <- function(ids, cutoff = 0.25) {
     netgraphs <- mapply(function(n, o) .createGraph(n, o),
                         comp_nets, grouped_originals, SIMPLIFY = FALSE)
     
-    #test
+    ## Separate different-sized graphs
+    ## for either LCA or cluster-based node selection
     ontos <- unlist(lapply(names(netgraphs), function(x) unlist(strsplit(x, split = ":"))[1]))
     nums <- lapply(netgraphs, function(x) length(V(x)))
     names(nums) <- ontos
@@ -474,15 +558,8 @@ mapNodes <- function(ids, cutoff = 0.25) {
         numall <- nums
     }
 
-    
-    ## Separate different-sized graphs
-    ## for either LCA or cluster-based node selection
     single <- lengths(grouped_originals) == 1
-    #cutoffs <- unlist(lapply(netgraphs, function(x) length(V(x)) * cutoff))
-    #test_cuts <- mapply(function(n, c)
-    #    length(names(which(degree(n, mode = "out") > c))), netgraphs, cutoffs,
-    #    SIMPLIFY = FALSE)
-    #test_cuts <- lapply(netgraphs, function(x) length(.busyNodes(x, cutoff)))
+
     test_cuts <- mapply(function(n, m) length(.busyNodes(n, m * cutoff)),
                         netgraphs,
                         numall,
@@ -496,11 +573,8 @@ mapNodes <- function(ids, cutoff = 0.25) {
         lca_ids <- seq_along(netgraphs)
     }
     
-    #cluster_nets <- netgraphs[cluster_ids]
-    #lca_nets <- netgraphs[-cluster_ids]
-    
     ## Select nodes for LCA-compatible graphs
-    lca_nodes <- mapply(function(g, o) LCA(g, o),
+    lca_nodes <- mapply(function(g, o) .LCA(g, o),
                         netgraphs[lca_ids, drop = FALSE],
                         grouped_originals[lca_ids, drop = FALSE],
                         SIMPLIFY = FALSE)
@@ -535,10 +609,12 @@ mapNodes <- function(ids, cutoff = 0.25) {
     ## Get information on picked nodes and save as dataframe
     node_dbs <- unlist(lapply(names(nodemap), get_ontologies))
     nmat <- .displayNodes(node_dbs, names(nodemap))
-    nmat$original_covered <- nodemap %>%
-        mutate(original_covered = paste(original_covered, collapse = ";"))
+    nmat$original_covered <- nodemap
     nmat$num_original_covered <- lengths(nodemap)
     nmat$num_original <- length(unique(ids))
+    nmat <- nmat %>%
+        rowwise() %>%
+        mutate(original_covered = paste(original_covered, collapse = ";"))
     
     return(nmat)
 }

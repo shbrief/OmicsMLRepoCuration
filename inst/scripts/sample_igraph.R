@@ -27,3 +27,11 @@ net <- data.frame(from = fromids,
 
 dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 readr::write_csv(net, file.path(dir, "sample_net.csv"))
+
+## Sample rols JSON tree representation for test
+onto <- rols::Ontology("NCIT")
+trm <- Term(onto, "NCIT:C274")
+treeframe <- jsonlite::fromJSON(trm@links$jstree$href)[, 1:4]
+
+dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+readr::write_csv(treeframe, file.path(dir, "sample_treeframe.csv"))
