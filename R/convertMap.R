@@ -1,4 +1,4 @@
-#' Convert one-to-many map to one-to-one format.
+#' Convert one-to-many map to one-to-one format
 #'
 #' @import dplyr
 #'
@@ -10,6 +10,9 @@
 #' @return A new data frame map featuring the same unique set of original values
 #' with a one-to-one mapping scheme for curated values.
 #' 
+#' @examples
+#' convertMap(cBioPortal_population_ancestry_map, ";")
+#'
 #' @export
 convertMap <- function(map, delimiter){
     

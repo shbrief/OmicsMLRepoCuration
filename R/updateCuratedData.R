@@ -1,40 +1,28 @@
-#' Removes excess semicolons/delimiters
+#' Remove duplicate values and clean empty values from a list (SUB-FUNCTION)
 #'
 #' @import dplyr
 #'
-#' @param x A character(1). The value containing semicolons or other exc delimiters
-#'  which need to be removed.
-#' @param delimiter A character(1). The specific delimiter used to separate the 
-#' values within `x`. Likely ";" or "<;>".
-#'
-#' @return A character value with the delimiter removed.
-#'
-#' @export
-rmv_xtra_semis <- function(x, delimiter){
-    x <- ifelse(startsWith(x, delimiter), sub(paste("^", delimiter, sep=""), "", x), x)
-    return(ifelse(endsWith(x, delimiter), sub(paste(delimiter, "$", sep=""), "", x), x))
-}
-
-#' Format a list output for a single cell value
-#'
-#' @import dplyr
-#'
-#' @param vals_list A character(1). The list of values belonging to a single cell
+#' @param vals_list A list. The list of values belonging to a single cell
 #' to collapse.
 #' @param delimiter A character(1). The delimiter used to separate values within
 #' a single cell of the original curated data frame. Likely ";" or "<;>".
 #'
-#' @return A character value containing all values fom the list collapsed on the
+#' @return A character value containing all values from the list collapsed on the
 #' delimiter.
+#' 
+#' @examples
+#' format_list(list("red", "yellow", "red", "blue", "", ""), ";")
 #'
 #' @export
 format_list <- function(vals_list, delimiter){
-    clean_list <- rmv_xtra_semis(paste(as.list(unique(vals_list)), collapse= delimiter), delimiter)
+    x <- paste(as.list(unique(vals_list)), collapse= delimiter)
+    x <- ifelse(startsWith(x, delimiter), sub(paste("^", delimiter, sep=""), "", x), x)
+    clean_list <- ifelse(endsWith(x, delimiter), sub(paste(delimiter, "$", sep=""), "", x), x)
     
     return(clean_list)
 }
 
-#' Map original values to curated values and curated ontology term ids
+#' Map original values to curated values and curated ontology term ids (SUB-FUNCTION)
 #'
 #' @import dplyr
 #'
@@ -48,6 +36,9 @@ format_list <- function(vals_list, delimiter){
 #' @return A character value containing all values fom the list collapsed on the
 #' delimiter.
 #'
+#' @examples
+#' map_values(cBioPortal_bodysite_map, "curated_ontology", "<;>")
+#' map_values(cMD_feeding_map, "curated_ontology_term_id", ";")
 #' @export
 map_values <- function(new_map, col, delimiter){
     index <- grep(paste("^",y,"$",sep=""), new_map[,"original_value"], fixed=F)
@@ -72,6 +63,10 @@ map_values <- function(new_map, col, delimiter){
 #'
 #' @return A data frame of the updated curated data.
 #'
+#' @examples
+#' updateCuratedData(curated_bodysite, cBioPortal_bodysite_map, "curated_bodysite", "<;>")
+#' updateCuratedData(curated_neonatal, cMD_feeding_map, "curated_neonatal_feeding_method", ";")
+#'
 #' @export
 updateCuratedData <- function(curated_data, map, column, delimiter){
     
@@ -86,8 +81,8 @@ updateCuratedData <- function(curated_data, map, column, delimiter){
         new_terms <- list()
         new_term_ids <- list()
         # Search for replacement terms in the ontology map
-        new_terms <- lapply(original_terms, function(y) map_values("curated_ontology"))
-        new_term_ids <- lapply(original_terms, function(y) map_values("curated_ontology_term_id"))
+        new_terms <- lapply(original_terms, function(y) map_values(map, "curated_ontology", delimiter))
+        new_term_ids <- lapply(original_terms, function(y) map_values(map, "curated_ontology_term_id", delimiter))
         new_terms <- format_list(list_drop_empty(new_terms), delimiter)
         new_term_ids <- format_list(list_drop_empty(new_term_ids), delimiter)
         # Concatenate new lists on delimiter to create curated value
