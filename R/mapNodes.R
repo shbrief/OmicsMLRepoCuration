@@ -492,6 +492,7 @@
 #' @importFrom dplyr distinct
 #' @importFrom plyr compact
 #' @importFrom igraph V
+#' @importFrom jsonlite fromJSON
 #' 
 #' @param ids Character vector of term ids.
 #' 
