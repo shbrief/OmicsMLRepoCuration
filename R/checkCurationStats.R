@@ -24,8 +24,8 @@
 #' representing the percentage completeness of the requested fields.
 #'
 #' @examples
-#' calCompleteness(c("curated_age_years", "curated_age_group"), "cMD")
-#' calCompleteness(c("curated_age_years;curated_age_group"), "cMD")
+#' checkCurationStats(c("curated_age_years", "curated_age_group"), DB = "cMD")
+#' checkCurationStats(c("curated_age_years;curated_age_group"), DB = "cMD")
 #'
 #'
 #' @export
@@ -40,8 +40,8 @@ checkCurationStats <- function(
     } else if (is.data.frame(DB)) {
         tb <- DB
     } else if (DB == "cMD") {
-        dir <- system.file("extdata", package = "OmicsMLRepoData")
-        fpath <- file.path(dir, "cMD_curated_sampleMetadata.csv")
+        dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+        fpath <- file.path(dir, "cMD_curated_metadata_all.csv")
         tb <- read.csv(fpath)
     }
 

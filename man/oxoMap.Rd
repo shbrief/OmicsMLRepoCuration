@@ -4,12 +4,12 @@
 \alias{oxoMap}
 \title{Mapping terms to the same ontology}
 \usage{
-oxoMap(term_ids, target_ontology, mapping_distance = 1)
+oxoMap(term_ids, target_ontology = "none", mapping_distance = 1)
 }
 \arguments{
 \item{term_ids}{A character vector of term ids to retrieve mappings for}
 
-\item{target_ontology}{A character (1). The target ontology library to
+\item{target_ontology}{Optional character (1). The target ontology library to
 map the `term_ids` to.}
 
 \item{mapping_distance}{Optional. Mapping distance as an integer, 1

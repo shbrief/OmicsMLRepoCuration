@@ -39,8 +39,8 @@ representing the percentage completeness of the requested fields.
 Calculate the completeness of metadata
 }
 \examples{
-calCompleteness(c("curated_age_years", "curated_age_group"), "cMD")
-calCompleteness(c("curated_age_years;curated_age_group"), "cMD")
+checkCurationStats(c("curated_age_years", "curated_age_group"), DB = "cMD")
+checkCurationStats(c("curated_age_years;curated_age_group"), DB = "cMD")
 
 
 }
