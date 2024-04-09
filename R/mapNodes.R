@@ -496,6 +496,7 @@
 #' @importFrom purrr map
 #' @importFrom stats setNames
 #' @importFrom utils stack unstack
+#' @importFrom jsonlite fromJSON
 #'
 #' @param ids Character vector of term ids.
 #' @param cutoff A numeric between 0 and 1. The maximum proportion of terms
