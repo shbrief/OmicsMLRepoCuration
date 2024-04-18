@@ -46,12 +46,17 @@ strVsplit <- function(terms, delim) {
 
 #' Indicate if a term is obsolete
 #' 
+#' @importFrom rols Ontology Term
+#' 
 #' @param term Character; ontology term 
 #' 
 #' @return Boolean
 #'
+#' @export
+#'
 #' @examples
 #' is_obsolete("EFO:0005842")
+#' 
 is_obsolete <- function(term) {
     onto <- get_ontologies(term)
     ontob <- Ontology(onto)
@@ -62,14 +67,17 @@ is_obsolete <- function(term) {
 
 #' Get replacement for obsolete term
 #' 
+#' @importFrom rols Ontology Term
+#' 
 #' @param term Character; ontology term id
 #' 
 #' @return Character; id of replacement term or "No replacement"
 #' 
+#' @export
+#' 
 #' @examples
 #' get_replacement("EFO:0005842")
-#' 
-#' @export
+#'
 get_replacement <- function(term) {
     onto <- get_ontologies(term)
     ontob <- Ontology(onto)

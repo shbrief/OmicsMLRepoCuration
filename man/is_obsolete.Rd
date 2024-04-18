@@ -17,4 +17,5 @@ Indicate if a term is obsolete
 }
 \examples{
 is_obsolete("EFO:0005842")
+
 }
