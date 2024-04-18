@@ -12,7 +12,7 @@
 \item{terms}{A character vector of ontology term IDs.}
 }
 \value{
-A named list. Names of elements are original nodes (`terms`). 
+A named list. Names of elements are original nodes (`terms`).
 Each element is a character link to a JSON tree or the string "no tree".
 }
 \description{

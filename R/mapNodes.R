@@ -5,7 +5,7 @@
 #' @param onto A character vector. Name(s) of ontologies that terms are from.
 #' @param terms A character vector of ontology term IDs.
 #'
-#' @return A named list. Names of elements are original nodes (`terms`). 
+#' @return A named list. Names of elements are original nodes (`terms`).
 #' Each element is a character link to a JSON tree or the string "no tree".
 #' 
 #' @export
@@ -68,7 +68,7 @@
 #' 
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
-#' tree_frame <- read.csv(file.path(dir, "sample_treeframe.csv"))  
+#' tree_frame <- read.csv(file.path(dir, "sample_treeframe.csv"))
 #'
 #' # .createNetwork(tree_frame = tree_frame)
 #'
@@ -113,7 +113,7 @@
 #' "NCIT:C25218", "NCIT:C67022"), to = c("NCIT:C16203", "NCIT:C25218",
 #' "NCIT:C67022", "NCIT:C93322")), class = "data.frame", row.names = c(NA, -4L)))
 #'
-#' # .groupRoots(nets) 
+#' # .groupRoots(nets)
 #'
 .groupRoots <- function(nets) {
     
@@ -393,6 +393,7 @@
 #' Retrieves ontology terms and database information for given term ids
 #'
 #' @import rols
+#' @importFrom methods as
 #' 
 #' @param onto A character vector. Name(s) of ontologies that terms are from.
 #' @param node A character vector of ontology term IDs.
@@ -431,7 +432,7 @@
         
         qry <- OlsSearch(q = curid, exact = TRUE)
         qry <- olsSearch(qry)
-        qdrf <- as(qry, "data.frame")
+        qdrf <- methods::as(qry, "data.frame")
         
         if (curont %in% qdrf$ontology_prefix) {
             record <- qdrf[qdrf$ontology_prefix == curont, ][1,]
@@ -676,12 +677,18 @@ plotClusters <- function(net, communities, layout = layout_with_fr) {
 #' @importFrom dplyr distinct
 #' @importFrom plyr compact
 #' @importFrom purrr map
+#' @importFrom stats setNames
+#' @importFrom utils stack unstack
 #' @importFrom igraph V
 #' @importFrom jsonlite fromJSON
 #' 
 #' @param ids Character vector of term ids.
+#' @param cutoff A numeric between 0 and 1. The maximum proportion of terms
+#' covered by the chosen nodes. The 'universe' is all the input terms, the
+#' shared root of them, and the terms between them. The smaller cutoff, the
+#' more nodes will be returned. Defaults to 0.25.
 #' 
-#' @return A dataframe of chosen nodes including information on number of 
+#' @return A dataframe of chosen nodes including information on number of
 #' original terms covered.
 #' 
 #' @export
@@ -714,7 +721,7 @@ mapNodes <- function(ids, cutoff = 0.25) {
         fails <- compact(lapply(json_urls, function(x) x[x == "no tree"]))
         good_urls <- compact(lapply(json_urls, function(x) x[x != "no tree"]))
         fail_names <- unlist(lapply(fails, names), use.names = FALSE)
-        fail_list <- setNames(as.list(fail_names), fail_names)
+        fail_list <- stats::setNames(as.list(fail_names), fail_names)
         print(paste0("Retrieving ", sum(lengths(good_urls)), " trees"))
         tree_frames <- lapply(good_urls, function(x) lapply(x, fromJSON))
     }, error = function(e) {
@@ -728,7 +735,7 @@ mapNodes <- function(ids, cutoff = 0.25) {
                        recursive = FALSE)
     names(big_nets) <- lapply(names(big_nets), function(x)
         unlist(strsplit(x, split  = "\\."))[2])
-    comp_nets <- map(split(big_nets, names(big_nets)), bind_rows)
+    comp_nets <- purrr::map(split(big_nets, names(big_nets)), bind_rows)
     grouped_terms <- lapply(comp_nets, function(x) unique(unlist(x)))
     grouped_originals <- lapply(grouped_terms, function(x) x[x %in% ids])
     netgraphs <- mapply(function(n, o) .createGraph(n, o),
@@ -740,7 +747,7 @@ mapNodes <- function(ids, cutoff = 0.25) {
     nums <- lapply(netgraphs, function(x) length(V(x)))
     names(nums) <- ontos
     if (any(duplicated(ontos))) {
-        gnums <- lapply(unstack(stack(nums, drop = FALSE)), sum)
+        gnums <- lapply(utils::unstack(utils::stack(nums, drop = FALSE)), sum)
         numall <- gnums[ontos]
     } else {
         numall <- nums
