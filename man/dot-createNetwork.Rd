@@ -22,7 +22,7 @@ representation
 }
 \examples{
 dir <- system.file("extdata", package = "OmicsMLRepoCuration")
-tree_frame <- read.csv(file.path(dir, "sample_treeframe.csv"))
+tree_frame <- read.csv(file.path(dir, "sample_treeframe.csv"))  
 
 # .createNetwork(tree_frame = tree_frame)
 

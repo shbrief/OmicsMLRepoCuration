@@ -11,8 +11,7 @@ Description: This package mainly supports metadata harmonization and curation
 License: GPL-3
 Depends: 
     R (>= 4.2.0),
-    OmicsMLRepoData,
-    OmicsMLRepoR
+    OmicsMLRepoData
 Imports:
     rols,
     methods,
@@ -22,3 +21,7 @@ Imports:
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
