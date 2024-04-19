@@ -21,5 +21,4 @@ Extract urls for JSON trees from rols Term object
 \examples{
 term_ids <- c("NCIT:C2855", "NCIT:C35025", "NCIT:C122328")
 # .getURLs("NCIT", term_ids)
-
 }

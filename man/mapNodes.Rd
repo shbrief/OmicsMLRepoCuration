@@ -10,9 +10,9 @@ mapNodes(ids, cutoff = 0.25)
 \item{ids}{Character vector of term ids.}
 
 \item{cutoff}{A numeric between 0 and 1. The maximum proportion of terms
-covered by the choosen nodes. The 'universe' is all the input terms, the
+covered by the chosen nodes. The 'universe' is all the input terms, the
 shared root of them, and the terms between them. The smaller cutoff, the
-more nodes will be returned.}
+more nodes will be returned. Defaults to 0.25.}
 }
 \value{
 A dataframe of chosen nodes including information on number of
