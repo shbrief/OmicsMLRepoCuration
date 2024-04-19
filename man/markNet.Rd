@@ -14,7 +14,8 @@ markNet(
 )
 }
 \arguments{
-\item{net}{An igraph network object}
+\item{net}{An igraph network object with a "type" vertex attribute;
+"type" = "root", "bridge", "original", or "picked"}
 
 \item{mark_nodes}{Character vector of vertices to highlight}
 

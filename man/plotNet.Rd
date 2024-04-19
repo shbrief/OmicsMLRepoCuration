@@ -7,7 +7,8 @@
 plotNet(net, layout = layout_with_fr)
 }
 \arguments{
-\item{net}{An igraph network object}
+\item{net}{An igraph network object with a "type" vertex attribute;
+"type" = "root", "bridge", "original", or "picked"}
 
 \item{layout}{An igraph layout object or layout function}
 }
