@@ -2,13 +2,13 @@
 #'
 #' @import dplyr
 #' @importFrom OmicsMLRepoR get_ontologies
+#' @importFrom stats na.omit
 #'
 #' @param curated_col A character (1). The curated column name to find
 #' the dynamic enum node for
 #' @param dd A data frame. Data dictionary including the `curated_col` under
 #' its `col.name` column.
 #'
-#' @export
 addDynamicEnumNodes <- function(curated_col, dd) {
 
     ## Find the `curated_col` in the data dictionary
@@ -24,7 +24,7 @@ addDynamicEnumNodes <- function(curated_col, dd) {
 
     ## Separate the ontoloty term ids and their ontologies
     terms <- dd[[ind, "ontology"]] %>% strsplit(split = "\\|") %>%
-        unlist %>% na.omit %>% as.vector
+        unlist %>% stats::na.omit %>% as.vector
     onto <- OmicsMLRepoR::get_ontologies(terms = terms, delim = ":")
 
     ## Remove SNOMED from the ontology term id
