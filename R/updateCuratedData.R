@@ -32,15 +32,17 @@ format_list <- function(vals_list, delimiter){
 #' from (either curated ontology terms or curated ontology term ids).
 #' @param delimiter A character(1). The delimiter used to separate values within
 #' a single cell of the original curated data frame. Likely ";" or "<;>".
-#'
-#' @return A character value containing all values fom the list collapsed on the
+#' @param y A character(1). The single original term value which needs to be 
+#' mapped to its curated ontology value.
+#' 
+#' @return A character value containing all values from the list collapsed on the
 #' delimiter.
 #'
 #' @examples
-#' map_values(cBioPortal_bodysite_map, "curated_ontology", "<;>")
-#' map_values(cMD_feeding_map, "curated_ontology_term_id", ";")
+#' ex_df <- data.frame(original_value = c("gold", "gold"), curated_ontology = c("Yellow", "Gold"), curated_ontology_term_id = c("123", "456"))
+#' map_values(ex_df, "curated_ontology", "<;>", "gold")
 #' @export
-map_values <- function(new_map, col, delimiter){
+map_values <- function(new_map, col, delimiter, y){
     index <- grep(paste("^",y,"$",sep=""), new_map[,"original_value"], fixed=F)
     mapped_vals <- format_list(list_drop_empty(as.list(new_map[index, col])), delimiter)
     
@@ -64,8 +66,9 @@ map_values <- function(new_map, col, delimiter){
 #' @return A data frame of the updated curated data.
 #'
 #' @examples
-#' updateCuratedData(curated_bodysite, cBioPortal_bodysite_map, "curated_bodysite", "<;>")
-#' updateCuratedData(curated_neonatal, cMD_feeding_map, "curated_neonatal_feeding_method", ";")
+#' ex_map <- data.frame(original_value = c("gold", "gold", "blue", "teal", "teal"), curated_ontology = c("Yellow", "Gold", "Blue", "Teal", "Blue"), curated_ontology_term_id = c("123", "456", "777", "333", "777"))
+#' ex_data <- data.frame(original_color = c("blue", "gold", "teal"), curated_color = c("Blue", "Gold", "Teal"), curated_color_ontology_term_id = c("777", "456", "333"))
+#' updateCuratedData(ex_data, ex_map, "color", "<;>")
 #'
 #' @export
 updateCuratedData <- function(curated_data, map, column, delimiter){
@@ -81,8 +84,8 @@ updateCuratedData <- function(curated_data, map, column, delimiter){
         new_terms <- list()
         new_term_ids <- list()
         # Search for replacement terms in the ontology map
-        new_terms <- lapply(original_terms, function(y) map_values(map, "curated_ontology", delimiter))
-        new_term_ids <- lapply(original_terms, function(y) map_values(map, "curated_ontology_term_id", delimiter))
+        new_terms <- lapply(original_terms, function(y) map_values(map, "curated_ontology", delimiter, y))
+        new_term_ids <- lapply(original_terms, function(y) map_values(map, "curated_ontology_term_id", delimiter, y))
         new_terms <- format_list(list_drop_empty(new_terms), delimiter)
         new_term_ids <- format_list(list_drop_empty(new_term_ids), delimiter)
         # Concatenate new lists on delimiter to create curated value

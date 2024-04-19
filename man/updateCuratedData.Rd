@@ -27,7 +27,8 @@ A data frame of the updated curated data.
 Update a column of curated data using a new mapping schema
 }
 \examples{
-updateCuratedData(curated_bodysite, cBioPortal_bodysite_map, "curated_bodysite", "<;>")
-updateCuratedData(curated_neonatal, cMD_feeding_map, "curated_neonatal_feeding_method", ";")
+ex_map <- data.frame(original_value = c("gold", "gold", "blue", "teal", "teal"), curated_ontology = c("Yellow", "Gold", "Blue", "Teal", "Blue"), curated_ontology_term_id = c("123", "456", "777", "333", "777"))
+ex_data <- data.frame(original_color = c("blue", "gold", "teal"), curated_color = c("Blue", "Gold", "Teal"), curated_color_ontology_term_id = c("777", "456", "333"))
+updateCuratedData(ex_data, ex_map, "color", "<;>")
 
 }

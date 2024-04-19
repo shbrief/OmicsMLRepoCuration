@@ -22,7 +22,7 @@ addDynamicEnumNodes <- function(curated_col, dd) {
         stop(msg)
     }
 
-    ## Separate the ontoloty term ids and their ontologies
+    ## Separate the ontology term ids and their ontologies
     terms <- dd[[ind, "ontology"]] %>% strsplit(split = "\\|") %>%
         unlist %>% stats::na.omit %>% as.vector
     onto <- OmicsMLRepoR::get_ontologies(terms = terms, delim = ":")

@@ -4,7 +4,7 @@
 \alias{map_values}
 \title{Map original values to curated values and curated ontology term ids (SUB-FUNCTION)}
 \usage{
-map_values(new_map, col, delimiter)
+map_values(new_map, col, delimiter, y)
 }
 \arguments{
 \item{new_map}{A data frame. The complete updated map containing the original
@@ -15,15 +15,18 @@ from (either curated ontology terms or curated ontology term ids).}
 
 \item{delimiter}{A character(1). The delimiter used to separate values within
 a single cell of the original curated data frame. Likely ";" or "<;>".}
+
+\item{y}{A character(1). The single original term value which needs to be 
+mapped to its curated ontology value.}
 }
 \value{
-A character value containing all values fom the list collapsed on the
+A character value containing all values from the list collapsed on the
 delimiter.
 }
 \description{
 Map original values to curated values and curated ontology term ids (SUB-FUNCTION)
 }
 \examples{
-map_values(cBioPortal_bodysite_map, "curated_ontology", "<;>")
-map_values(cMD_feeding_map, "curated_ontology_term_id", ";")
+ex_df <- data.frame(original_value = c("gold", "gold"), curated_ontology = c("Yellow", "Gold"), curated_ontology_term_id = c("123", "456"))
+map_values(ex_df, "curated_ontology", "<;>", "gold")
 }
