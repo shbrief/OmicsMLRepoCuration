@@ -4,7 +4,7 @@
 #' the target ontology through Ontology Xref Service (OxO) API.
 #' (https://www.ebi.ac.uk/spot/oxo/)
 #'
-#' @importFrom httr2 request req_headers resp_body_json req_perform
+#' @importFrom httr2 request req_headers resp_body_json req_perform req_body_json
 #'
 #' @param term_ids A character vector of term ids to retrieve mappings for
 #' @param target_ontology Optional character (1). The target ontology library to
@@ -19,6 +19,7 @@
 #'               "HP:0001824", "MONDO:0010200", "NCIT:C122328")
 #' oxoMap(term_ids, "NCIT")
 #'
+#' @export
 oxoMap <- function(term_ids, target_ontology = "none", mapping_distance = 1) {
   # Validate input
   stopifnot(is.character(term_ids),
@@ -35,11 +36,11 @@ oxoMap <- function(term_ids, target_ontology = "none", mapping_distance = 1) {
                     inputSource = NULL,
                     mappingTarget = target_ontology,
                     distance = mapping_distance)
-  
+
   if (target_ontology == "none") {
       body_json["mappingTarget"] <- NULL
   }
-  
+
   req <- request("https://www.ebi.ac.uk/spot/oxo/api/search?size=200") %>%
     req_headers("Content-Type" = "application/json",
                 "Accept" = "application/json") %>%
