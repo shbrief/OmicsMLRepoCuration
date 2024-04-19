@@ -1,8 +1,19 @@
 Package: OmicsMLRepoCuration
 Type: Package
 Title: Help metadata curation with ontology
-Version: 0.1.0
-Authors@R: person("Sehyun", "Oh", email = "shbrief@gmail.com", role = c("aut","cre"))
+Version: 0.1.1
+Authors@R: 
+    c(person(given = "Sehyun",
+            family = "Oh",
+            role = c("aut", "cre"),
+            email = "shbrief@gmail.com",
+            comment = c(ORCID = "0000-0002-9490-3061")),
+     person(given = "Kaelyn",
+            family = "Long",
+            role = "aut"),
+     person(given = "Kai",
+            family = "Gravel-Pucillo",
+            role = "aut"))
 Maintainer: Sehyun Oh <shbrief@gmail.com>
 Description: This package mainly supports metadata harmonization and curation
     processes to make omics data AI/ML applications. Its focus is in the 
@@ -11,14 +22,19 @@ Description: This package mainly supports metadata harmonization and curation
 License: GPL-3
 Depends: 
     R (>= 4.2.0),
-    OmicsMLRepoData,
-    OmicsMLRepoR
 Imports:
     rols,
-    methods,
     utils,
     dplyr,
-    testthat
+    testthat,
+    purrr,
+    igraph,
+    plyr,
+    httr2,
+    OmicsMLRepoR,
+    stats,
+    methods,
+    jsonlite
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.1
