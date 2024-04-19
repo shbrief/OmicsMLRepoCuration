@@ -7,7 +7,8 @@
 plotClusters(net, communities, layout = layout_with_fr)
 }
 \arguments{
-\item{net}{An igraph network object}
+\item{net}{An igraph network object with a "type" vertex attribute;
+"type" = "root", "bridge", "original", or "picked"}
 
 \item{communities}{List of character vectors representing groups to mark; as
 output by igraph clustering functions}
