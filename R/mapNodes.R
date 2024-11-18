@@ -16,8 +16,12 @@
 .getURLs <- function(onto, terms) {
     
     ## Load ontology
-    ontob <- Ontology(onto)
-    
+    tryCatch({
+        ontob <- Ontology(onto)
+    }, error = function(e) {
+        stop(paste0("Error retrieving ontology: \"", onto, "\""))
+    })
+
     ## Get unique terms
     terms <- unique(terms)
     
@@ -166,7 +170,8 @@
                                         v = leaves,
                                         to = root,
                                         algorithm = "unweighted"))
-    lcas <- rownames(dists)[which(dists == max(dists))]
+    dist_sums <- rowSums(dists)
+    lcas <- names(which.max(dist_sums))
     return(lcas)
 }
 
@@ -337,7 +342,7 @@
 #' # .createGraph(net = net, original_terms = original_terms)
 #'
 .createGraph <- function(net, original_terms) {
-    
+
     ## Get different types of nodes
     vex <- unique(unlist(net))
     ovex <- original_terms
@@ -351,7 +356,7 @@
     vframe <- data.frame(vex = vex,
                          type = NA)
     vframe <- vframe %>%
-        mutate(type = case_when(vex == root ~ "root",
+        mutate(type = case_when(vex %in% root ~ "root",
                                 vex %in% ovex ~ "original",
                                 .default = "bridge"))
     
@@ -514,7 +519,8 @@
 #' 
 #' @importFrom igraph V simplify
 #' 
-#' @param net An igraph network object
+#' @param net An igraph network object with a "type" vertex attribute;
+#' "type" = "root", "bridge", "original", or "picked"
 #' @param mark_nodes Character vector of vertices to highlight
 #' @param mark_color Character; color to highlight vertices
 #' @param mark_label Character; legend label for highlighted vertices; defaults
@@ -575,7 +581,8 @@ markNet <- function(net, mark_nodes, mark_color = "white",
 #' 
 #' @importFrom igraph V simplify
 #' 
-#' @param net An igraph network object
+#' @param net An igraph network object with a "type" vertex attribute;
+#' "type" = "root", "bridge", "original", or "picked"
 #' @param layout An igraph layout object or layout function
 #' 
 #' @return An igraph plot
@@ -622,7 +629,8 @@ plotNet <- function(net, layout = layout_with_fr) {
 #' 
 #' @importFrom igraph V simplify
 #' 
-#' @param net An igraph network object
+#' @param net An igraph network object with a "type" vertex attribute;
+#' "type" = "root", "bridge", "original", or "picked"
 #' @param communities List of character vectors representing groups to mark; as
 #' output by igraph clustering functions
 #' @param layout An igraph layout object or layout function
