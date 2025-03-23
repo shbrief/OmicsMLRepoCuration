@@ -9,6 +9,7 @@
 #' @param dd A data frame. Data dictionary including the `curated_col` under
 #' its `col.name` column.
 #'
+#' @export
 addDynamicEnumNodes <- function(curated_col, dd) {
 
     ## Find the `curated_col` in the data dictionary

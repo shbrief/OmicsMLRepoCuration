@@ -74,7 +74,16 @@ checkCurationStats <- function(
                 }
             } else if (check == "unique") {
                 for (j in seq_along(fields)) {
-                    unique_vect <- unique(tb[,fields[j]]) |> as.vector()
+                    # unique_vect <- unique(tb[,fields[j]]) |> as.vector()
+                    unique_vect <- unique(tb[,fields[j]]) |> pull()
+
+                    if (is.character(unique_vect)) { ## can't apply strsplit on numeric
+                        unique_vect <- unique_vect |>
+                            strsplit(, split = "<;>") |> unlist() |>
+                            strsplit(, split = ";") |> unlist() |>
+                            unique() |> as.vector()
+                    }
+
                     p <- length(unlist(unique_vect))
                     res[j] <- p
                 }
