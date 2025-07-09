@@ -3,6 +3,8 @@
 #' @import dplyr
 #' @importFrom utils read.csv
 #' @importFrom testthat skip
+#' @importFrom stringr str_squish str_replace
+#'
 #'
 #' @param fields_list A character vector with the original columns/fields names.
 #' Multiple values should be separated by semi-colon(;).
@@ -22,6 +24,11 @@
 #'
 #' @return A character vector with the same length as that of \code{fields_list}
 #' representing the percentage completeness of the requested fields.
+#'
+#' @notes
+#' For cBioPortalData metadata, there are many column names with space and two
+#' with `.` (`PATHWAY_ACTIVITY_JAK.STAT` and `RADIATION_DOSE_PELVIC_NODES_PRIMARY_TUMOR.`).
+#' To handle these, this function manually add back two with `.`.
 #'
 #' @examples
 #' checkCurationStats(c("curated_age_years", "curated_age_group"), DB = "cMD")
@@ -55,12 +62,21 @@ checkCurationStats <- function(
     univ <- nrow(tb)
 
     for (i in seq_along(fields_list)) {
-        fields <- strsplit(fields_list[i], split = ";") %>% unlist
+        fields <- gsub("\\.", " ", fields_list[i]) %>% # replace `.` introduced to space
+            strsplit(., split = ";") %>%
+            unlist %>%
+            stringr::str_squish(.) # remove unintended space
 
+        ## Manually fix the mal-formed original column names
+        fields <- stringr::str_replace(fields, "PATHWAY_ACTIVITY_JAK STAT", "PATHWAY_ACTIVITY_JAK.STAT") %>%
+            stringr::str_replace(., "RADIATION_DOSE_PELVIC_NODES_PRIMARY_TUMOR", "RADIATION_DOSE_PELVIC_NODES_PRIMARY_TUMOR.")
+
+        ## source fields that are derivative, thus not in the original table
+        if (exists("missing_cols")) {rm(missing_cols)} # remove the variable
         if (!all(fields %in% colnames(tb)) & any(!is.na(fields))) {
-            ind <- which(fields %in% colnames(tb) == FALSE)
-            msg <- paste(fields[ind], "column does not exist.")
-            next(msg)
+            missing_cols <- which(fields %in% colnames(tb) == FALSE)
+            msg <- paste(fields[missing_cols], "column does not exist.")
+            fields <- fields[-missing_cols] # remove column(s) not in the source table
         }
 
         if (any(is.na(fields))) {
@@ -75,20 +91,44 @@ checkCurationStats <- function(
             } else if (check == "unique") {
                 for (j in seq_along(fields)) {
                     # unique_vect <- unique(tb[,fields[j]]) |> as.vector()
-                    unique_vect <- unique(tb[,fields[j]]) |> pull()
+                    # unique_vect <- unique(tb[,fields[j]])
+                    #
+                    # if (is.character(unique_vect)) { ## can't apply strsplit on numeric.
+                    #     unique_vect <- unique_vect |>
+                    #         strsplit(, split = "<;>") |> unlist() |>
+                    #         strsplit(, split = ";") |> unlist() |>
+                    #         unique() |> as.vector()
+                    # } else {
+                    #     unique_vect <- unique_vect |>
+                    #         pull |>
+                    #         strsplit(, split = "<;>") |> unlist() |>
+                    #         strsplit(, split = ";") |> unlist() |>
+                    #         unique() |> as.vector()
+                    # }
 
-                    if (is.character(unique_vect)) { ## can't apply strsplit on numeric
-                        unique_vect <- unique_vect |>
-                            strsplit(, split = "<;>") |> unlist() |>
-                            strsplit(, split = ";") |> unlist() |>
-                            unique() |> as.vector()
+                    unique_vect <- unique(tb[, fields[j]])
+
+                    if (is.data.frame(unique_vect)) {
+                        unique_vect <- pull(unique_vect)
                     }
+                    if (!is.character(unique_vect)) {
+                        unique_vect <- as.character(unique_vect)
+                    }
+
+                    unique_vect <- unique_vect |>
+                        strsplit(split = "<;>") |> unlist() |>
+                        strsplit(split = ";") |> unlist() |>
+                        unique()
 
                     p <- length(unlist(unique_vect))
                     res[j] <- p
                 }
             }
+        }
 
+        ## Put the missing columns completeness/num_unique_vals as 0
+        if (exists("missing_cols")) {
+            res[length(res)+1] <- "NA"
         }
         res_all[i] <- paste0(res, collapse = ";")
     }
