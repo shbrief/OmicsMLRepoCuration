@@ -4,7 +4,13 @@
 \alias{table_to_yaml_schema}
 \title{Convert schema table to YAML format}
 \usage{
-table_to_yaml_schema(schema_table, output_file = NULL)
+table_to_yaml_schema(
+  schema_table,
+  output_file = NULL,
+  schema_version = "1.0.0",
+  schema_name = "curatedMetagenomicData_metadata_schema",
+  schema_description = "Metadata schema for curatedMetagenomicData package"
+)
 }
 \arguments{
 \item{schema_table}{A data frame containing schema definitions with columns
@@ -14,6 +20,12 @@ requiredness, multiplevalues, description, allowedvalues, ontology.}
 \item{output_file}{Character string specifying the path to the output YAML file.
 If \code{NULL} (default), the schema is returned as a list without writing
 to disk.}
+
+\item{schema_version}{Character string for schema version. Default is "1.0.0".}
+
+\item{schema_name}{Character string for schema name. Default is "curatedMetagenomicData_metadata_schema".}
+
+\item{schema_description}{Character string describing the schema. Default is "Metadata schema for curatedMetagenomicData package".}
 }
 \value{
 A list containing the schema in YAML-compatible format, with field
@@ -28,29 +40,46 @@ dictionaries or for round-trip conversions between formats.
 \details{
 The function processes the following:
 \itemize{
-  \item Converts requiredness to boolean required field
+  \item Converts requiredness/required to boolean required field
   \item Parses allowedvalues as either regex patterns or pipe-separated lists
-  \item Splits ontology IDs by pipe character
+  \item Handles dynamic.enum column to create file-based ontology sources
+  \item Processes dynamic.enum.property for filtering ontology terms
+  \item Adds delimiter for multiple value fields
+  \item Splits ontology IDs by pipe character for static ontologies
   \item Creates proper YAML structure with validation and ontology sections
+}
+
+The function supports two CSV formats:
+\itemize{
+  \item Old format: col.name, col.class, uniqueness, requiredness, multiplevalues, 
+        description, allowedvalues, ontology
+  \item New format: col.name, col.class, unique, required, multiplevalues, 
+        description, allowedvalues, static.enum, dynamic.enum, 
+        dynamic.enum.property, delimiter, separater, corpus.type
 }
 }
 \examples{
-# Create sample data dictionary
-dict_df <- data.frame(
-  col.name = c("sample_id", "age"),
-  col.class = c("character", "numeric"),
-  uniqueness = c("unique", "non-unique"),
-  requiredness = c("required", "optional"),
-  multiplevalues = c(FALSE, FALSE),
-  description = c("Sample identifier", "Age in years"),
-  allowedvalues = c(NA, "^[0-9]+$"),
-  ontology = c(NA, NA),
-  stringsAsFactors = FALSE
-)
-
 # Convert to YAML format
 yaml_schema <- table_to_yaml_schema(dict_df)
 str(yaml_schema)
+
+# Example with new format (dynamic enum)
+dict_df_new <- data.frame(
+  col.name = "disease",
+  col.class = "character",
+  unique = "non-unique",
+  required = "optional",
+  multiplevalues = TRUE,
+  description = "Reported disease type",
+  allowedvalues = NA,
+  static.enum = NA,
+  dynamic.enum = "NCIT:C7057;EFO:0000408",
+  dynamic.enum.property = "descendant",
+  delimiter = ";",
+  separater = NA,
+  corpus.type = "dynamic_enum",
+  stringsAsFactors = FALSE
+)
 
 # Write to file
 # temp_yaml <- tempfile(fileext = ".yaml")

@@ -4,9 +4,7 @@
 \alias{load_metadata_schema}
 \title{Load metadata schema from YAML file}
 \usage{
-load_metadata_schema(
-  schema_file = "schemas/curatedMetagenomicData_schema.yaml"
-)
+load_metadata_schema(schema_file = "schema/cmd_schema.yaml")
 }
 \arguments{
 \item{schema_file}{Character string specifying the path to the YAML schema
