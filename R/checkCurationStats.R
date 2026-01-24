@@ -25,7 +25,7 @@
 #' @return A character vector with the same length as that of \code{fields_list}
 #' representing the percentage completeness of the requested fields.
 #'
-#' @notes
+#' @note
 #' For cBioPortalData metadata, there are many column names with space and two
 #' with `.` (`PATHWAY_ACTIVITY_JAK.STAT` and `RADIATION_DOSE_PELVIC_NODES_PRIMARY_TUMOR.`).
 #' To handle these, this function manually add back two with `.`.
