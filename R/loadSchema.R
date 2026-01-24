@@ -742,10 +742,12 @@ table_to_linkml_schema <- function(schema_table,
         allowed_vals <- strsplit(as.character(row$allowedvalues), "\\|")[[1]]
         allowed_vals <- trimws(allowed_vals)
         
-        permissible_values <- list()
-        for (val in allowed_vals) {
-          permissible_values[[val]] <- NULL
-        }
+        # Create permissible_values as named list with NULL values
+        # This will write as "value: {}" in YAML which LinkML accepts
+        permissible_values <- setNames(
+          rep(list(NULL), length(allowed_vals)),
+          allowed_vals
+        )
         
         enums[[enum_name]] <- list(
           permissible_values = permissible_values
