@@ -1,9 +1,10 @@
 ---
-title: "Choosing Representative Nodes for a Set of Ontology Terms"
+title: "Choosing Dynamic Enum Nodes"
 author: "Kaelyn Long"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{representativenodes}
+  %\VignetteIndexEntry{Dynamic Enums}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
