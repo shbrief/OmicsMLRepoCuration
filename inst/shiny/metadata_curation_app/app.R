@@ -40,6 +40,7 @@ ui <- dashboardPage(
       menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
       menuItem("Import Data", tabName = "upload", icon = icon("file-import")),
       menuItem("Data Editor", tabName = "editor", icon = icon("table")),
+      menuItem("Data Curation", tabName = "curation", icon = icon("magic")),
       menuItem("Quality Control", tabName = "validation", icon = icon("check-double")),
       menuItem("Ontology Browser", tabName = "ontology", icon = icon("sitemap")),
       menuItem("Export", tabName = "export", icon = icon("file-export")),
@@ -421,6 +422,203 @@ ui <- dashboardPage(
         )
       ),
       
+      # Data Curation Tab
+      tabItem(
+        tabName = "curation",
+        fluidRow(
+          box(
+            title = "Data Curation Tools",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12,
+            icon = icon("magic"),
+            p("Use these tools to standardize, map, and clean your metadata values.")
+          )
+        ),
+        
+        # Ontology Term Mapping
+        fluidRow(
+          box(
+            title = "Ontology Term Mapping",
+            status = "info",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            width = 12,
+            icon = icon("project-diagram"),
+            p("Map free-text values to standardized ontology terms using intelligent search."),
+            fluidRow(
+              column(4,
+                selectInput("map_field", "Select field to map:",
+                           choices = NULL, width = "100%")
+              ),
+              column(4,
+                selectInput("map_ontology", "Target ontology:",
+                           choices = c("HANCESTRO" = "hancestro",
+                                     "NCIT" = "ncit",
+                                     "EFO" = "efo",
+                                     "HP" = "hp",
+                                     "MONDO" = "mondo"),
+                           width = "100%")
+              ),
+              column(4,
+                numericInput("map_best_n", "Number of suggestions:",
+                            value = 3, min = 1, max = 10, width = "100%")
+              )
+            ),
+            fluidRow(
+              column(12,
+                actionButton("run_mapping", "Map Values to Ontology Terms",
+                           icon = icon("magic"), class = "btn-primary btn-lg"),
+                actionButton("apply_mapping", "Apply Selected Mappings",
+                           icon = icon("check"), class = "btn-success"),
+                actionButton("clear_mapping", "Clear Results",
+                           icon = icon("eraser"), class = "btn-secondary")
+              )
+            ),
+            hr(),
+            uiOutput("mapping_status"),
+            DTOutput("mapping_results")
+          )
+        ),
+        
+        # Cross-Ontology Mapping
+        fluidRow(
+          box(
+            title = "Cross-Ontology Mapping (OxO)",
+            status = "warning",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = 12,
+            icon = icon("exchange-alt"),
+            p("Map ontology terms from one ontology to another using the OxO service."),
+            fluidRow(
+              column(4,
+                selectInput("oxo_field", "Select field with ontology IDs:",
+                           choices = NULL, width = "100%")
+              ),
+              column(4,
+                selectInput("oxo_target", "Target ontology:",
+                           choices = c("NCIT" = "NCIT",
+                                     "EFO" = "EFO",
+                                     "HP" = "HP",
+                                     "MONDO" = "MONDO",
+                                     "HANCESTRO" = "HANCESTRO"),
+                           width = "100%")
+              ),
+              column(4,
+                selectInput("oxo_distance", "Mapping distance:",
+                           choices = c("1 (direct)" = 1,
+                                     "2 (one hop)" = 2,
+                                     "3 (two hops)" = 3),
+                           selected = 1,
+                           width = "100%")
+              )
+            ),
+            actionButton("run_oxo", "Map Across Ontologies",
+                        icon = icon("exchange-alt"), class = "btn-warning btn-lg"),
+            hr(),
+            uiOutput("oxo_status"),
+            DTOutput("oxo_results")
+          )
+        ),
+        
+        # Bulk Operations
+        fluidRow(
+          box(
+            title = "Bulk Operations",
+            status = "success",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = 6,
+            icon = icon("tasks"),
+            h5("Find and Replace"),
+            fluidRow(
+              column(12,
+                selectInput("bulk_field", "Select field:",
+                           choices = NULL, width = "100%")
+              )
+            ),
+            fluidRow(
+              column(6,
+                textInput("find_text", "Find:", width = "100%")
+              ),
+              column(6,
+                textInput("replace_text", "Replace with:", width = "100%")
+              )
+            ),
+            checkboxInput("case_sensitive", "Case sensitive", value = FALSE),
+            checkboxInput("whole_word", "Match whole word only", value = FALSE),
+            actionButton("preview_replace", "Preview", 
+                        icon = icon("eye"), class = "btn-info"),
+            actionButton("apply_replace", "Apply Changes",
+                        icon = icon("check"), class = "btn-success"),
+            hr(),
+            h5("Fill Down"),
+            p("Fill empty cells with the value from the cell above."),
+            selectInput("filldown_field", "Select field:",
+                       choices = NULL, width = "100%"),
+            actionButton("apply_filldown", "Fill Down Empty Cells",
+                        icon = icon("arrow-down"), class = "btn-primary"),
+            hr(),
+            uiOutput("bulk_status")
+          ),
+          
+          # Data Cleaning
+          box(
+            title = "Data Cleaning",
+            status = "danger",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = 6,
+            icon = icon("broom"),
+            h5("Text Cleaning Operations"),
+            selectInput("clean_field", "Select field:",
+                       choices = NULL, width = "100%"),
+            checkboxGroupInput("clean_operations", "Select operations:",
+                             choices = c(
+                               "Trim whitespace" = "trim",
+                               "Remove extra spaces" = "space",
+                               "Convert to lowercase" = "lower",
+                               "Convert to uppercase" = "upper",
+                               "Title case" = "title",
+                               "Remove special characters" = "special",
+                               "Remove numbers" = "numbers"
+                             ),
+                             selected = c("trim", "space")),
+            actionButton("preview_clean", "Preview Changes",
+                        icon = icon("eye"), class = "btn-info"),
+            actionButton("apply_clean", "Apply Cleaning",
+                        icon = icon("broom"), class = "btn-danger"),
+            hr(),
+            h5("Remove Duplicates"),
+            p("Remove duplicate rows based on selected fields."),
+            selectInput("dedup_fields", "Select fields for comparison:",
+                       choices = NULL, multiple = TRUE, width = "100%"),
+            actionButton("apply_dedup", "Remove Duplicates",
+                        icon = icon("filter"), class = "btn-warning"),
+            hr(),
+            uiOutput("clean_status")
+          )
+        ),
+        
+        # Curation Results
+        fluidRow(
+          box(
+            title = "Curation Preview",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12,
+            icon = icon("clipboard-list"),
+            uiOutput("curation_summary"),
+            hr(),
+            DTOutput("curation_preview")
+          )
+        )
+      ),
+      
       # Ontology Browser Tab
       tabItem(
         tabName = "ontology",
@@ -595,7 +793,10 @@ server <- function(input, output, session) {
   rv <- reactiveValues(
     data = NULL,
     validation_results = NULL,
-    selected_rows = NULL
+    selected_rows = NULL,
+    mapping_results = NULL,
+    oxo_results = NULL,
+    curation_preview = NULL
   )
   
   # Navigation buttons
@@ -613,6 +814,19 @@ server <- function(input, output, session) {
     }
     updateSelectInput(session, "new_column_select", 
                      choices = c("Choose from schema..." = "", available_fields))
+  })
+  
+  # Update field choices for curation tools
+  observe({
+    req(rv$data)
+    field_choices <- colnames(rv$data)
+    
+    updateSelectInput(session, "map_field", choices = field_choices)
+    updateSelectInput(session, "oxo_field", choices = field_choices)
+    updateSelectInput(session, "bulk_field", choices = field_choices)
+    updateSelectInput(session, "filldown_field", choices = field_choices)
+    updateSelectInput(session, "clean_field", choices = field_choices)
+    updateSelectInput(session, "dedup_fields", choices = field_choices)
   })
   
   # Dashboard value boxes
@@ -1293,6 +1507,428 @@ server <- function(input, output, session) {
         )
       )
   })
+  
+  # ========== DATA CURATION LOGIC ==========
+  
+  # Ontology Term Mapping
+  observeEvent(input$run_mapping, {
+    req(rv$data, input$map_field)
+    
+    withProgress(message = 'Mapping values to ontology...', value = 0, {
+      incProgress(0.2)
+      
+      field_values <- unique(rv$data[[input$map_field]])
+      field_values <- field_values[!is.na(field_values) & field_values != ""]
+      
+      if(length(field_values) == 0) {
+        showNotification("No values to map in selected field", type = "warning")
+        return()
+      }
+      
+      incProgress(0.3)
+      
+      tryCatch({
+        # Use mapNodes function from the package
+        mapping_result <- mapNodes(
+          col = field_values,
+          onto = input$map_ontology,
+          best_n = input$map_best_n
+        )
+        
+        incProgress(0.8)
+        
+        # Format results for display
+        results_list <- lapply(names(mapping_result), function(original_value) {
+          suggestions <- mapping_result[[original_value]]
+          if(length(suggestions) > 0) {
+            data.frame(
+              OriginalValue = original_value,
+              SuggestedID = sapply(suggestions, function(x) x$id),
+              SuggestedLabel = sapply(suggestions, function(x) x$label),
+              Score = sapply(suggestions, function(x) round(x$score, 3)),
+              stringsAsFactors = FALSE
+            )
+          } else {
+            data.frame(
+              OriginalValue = original_value,
+              SuggestedID = "No match",
+              SuggestedLabel = "No match",
+              Score = 0,
+              stringsAsFactors = FALSE
+            )
+          }
+        })
+        
+        rv$mapping_results <- do.call(rbind, results_list)
+        
+        showNotification("Mapping completed successfully!", type = "message")
+        
+      }, error = function(e) {
+        showNotification(paste("Mapping error:", e$message), type = "error")
+      })
+      
+      incProgress(1)
+    })
+  })
+  
+  # Display mapping results
+  output$mapping_results <- renderDT({
+    req(rv$mapping_results)
+    
+    datatable(
+      rv$mapping_results,
+      selection = list(mode = 'multiple', target = 'row'),
+      options = list(
+        pageLength = 25,
+        scrollX = TRUE
+      ),
+      rownames = FALSE
+    ) %>%
+      formatStyle(
+        'Score',
+        background = styleColorBar(c(0, 1), '#4caf50'),
+        backgroundSize = '100% 90%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'center'
+      )
+  })
+  
+  output$mapping_status <- renderUI({
+    if(is.null(rv$mapping_results)) {
+      tags$p("No mapping results yet. Click 'Map Values' to begin.")
+    } else {
+      tags$div(
+        class = "alert alert-info",
+        icon("info-circle"),
+        sprintf(" Found %d unique values, %d total mappings generated",
+                length(unique(rv$mapping_results$OriginalValue)),
+                nrow(rv$mapping_results))
+      )
+    }
+  })
+  
+  # Apply selected mappings
+  observeEvent(input$apply_mapping, {
+    req(rv$data, rv$mapping_results, input$mapping_results_rows_selected)
+    
+    selected_mappings <- rv$mapping_results[input$mapping_results_rows_selected, ]
+    
+    # Apply mappings to data
+    for(i in 1:nrow(selected_mappings)) {
+      original <- selected_mappings$OriginalValue[i]
+      mapped <- selected_mappings$SuggestedID[i]
+      
+      rv$data[[input$map_field]][rv$data[[input$map_field]] == original] <- mapped
+    }
+    
+    showNotification(paste("Applied", nrow(selected_mappings), "mappings"), 
+                    type = "message")
+  })
+  
+  # Clear mapping results
+  observeEvent(input$clear_mapping, {
+    rv$mapping_results <- NULL
+  })
+  
+  # Cross-Ontology Mapping (OxO)
+  observeEvent(input$run_oxo, {
+    req(rv$data, input$oxo_field)
+    
+    withProgress(message = 'Running OxO cross-ontology mapping...', value = 0, {
+      incProgress(0.2)
+      
+      # Get unique ontology IDs from field
+      term_ids <- unique(rv$data[[input$oxo_field]])
+      term_ids <- term_ids[!is.na(term_ids) & term_ids != ""]
+      
+      # Filter for valid ontology ID format (e.g., "NCIT:C123")
+      term_ids <- term_ids[grepl("^[A-Z]+:[A-Z0-9_]+$", term_ids)]
+      
+      if(length(term_ids) == 0) {
+        showNotification("No valid ontology IDs found in selected field", 
+                        type = "warning")
+        return()
+      }
+      
+      incProgress(0.3)
+      
+      tryCatch({
+        # Use oxoMap function
+        oxo_result <- oxoMap(
+          term_ids = term_ids,
+          target_ontology = input$oxo_target,
+          mapping_distance = as.numeric(input$oxo_distance)
+        )
+        
+        incProgress(0.8)
+        
+        # Format results
+        results_list <- lapply(names(oxo_result), function(term) {
+          mappings <- oxo_result[[term]]
+          if(nrow(mappings) > 0) {
+            data.frame(
+              SourceID = term,
+              TargetID = mappings$curie,
+              TargetLabel = mappings$label,
+              Distance = mappings$distance,
+              stringsAsFactors = FALSE
+            )
+          } else {
+            data.frame(
+              SourceID = term,
+              TargetID = "No mapping",
+              TargetLabel = "No mapping",
+              Distance = NA,
+              stringsAsFactors = FALSE
+            )
+          }
+        })
+        
+        rv$oxo_results <- do.call(rbind, results_list)
+        
+        showNotification("OxO mapping completed!", type = "message")
+        
+      }, error = function(e) {
+        showNotification(paste("OxO mapping error:", e$message), type = "error")
+      })
+      
+      incProgress(1)
+    })
+  })
+  
+  # Display OxO results
+  output$oxo_results <- renderDT({
+    req(rv$oxo_results)
+    
+    datatable(
+      rv$oxo_results,
+      options = list(
+        pageLength = 25,
+        scrollX = TRUE
+      ),
+      rownames = FALSE
+    ) %>%
+      formatStyle(
+        'Distance',
+        backgroundColor = styleEqual(c(1, 2, 3), c('#d4edda', '#fff3cd', '#f8d7da'))
+      )
+  })
+  
+  output$oxo_status <- renderUI({
+    if(is.null(rv$oxo_results)) {
+      tags$p("No OxO results yet. Click 'Map Across Ontologies' to begin.")
+    } else {
+      tags$div(
+        class = "alert alert-success",
+        icon("check-circle"),
+        sprintf(" Mapped %d source terms, found %d target mappings",
+                length(unique(rv$oxo_results$SourceID)),
+                sum(rv$oxo_results$TargetID != "No mapping"))
+      )
+    }
+  })
+  
+  # Find and Replace - Preview
+  observeEvent(input$preview_replace, {
+    req(rv$data, input$bulk_field, input$find_text)
+    
+    field_data <- rv$data[[input$bulk_field]]
+    
+    if(input$case_sensitive) {
+      matches <- grepl(input$find_text, field_data, fixed = !input$whole_word)
+    } else {
+      matches <- grepl(input$find_text, field_data, fixed = !input$whole_word, 
+                      ignore.case = TRUE)
+    }
+    
+    n_matches <- sum(matches, na.rm = TRUE)
+    
+    showNotification(
+      paste("Found", n_matches, "matches in", input$bulk_field),
+      type = if(n_matches > 0) "message" else "warning",
+      duration = 5
+    )
+  })
+  
+  # Find and Replace - Apply
+  observeEvent(input$apply_replace, {
+    req(rv$data, input$bulk_field, input$find_text)
+    
+    field_data <- rv$data[[input$bulk_field]]
+    
+    if(input$case_sensitive) {
+      if(input$whole_word) {
+        pattern <- paste0("\\b", input$find_text, "\\b")
+        rv$data[[input$bulk_field]] <- gsub(pattern, input$replace_text, field_data)
+      } else {
+        rv$data[[input$bulk_field]] <- gsub(input$find_text, input$replace_text, 
+                                            field_data, fixed = TRUE)
+      }
+    } else {
+      if(input$whole_word) {
+        pattern <- paste0("\\b", input$find_text, "\\b")
+        rv$data[[input$bulk_field]] <- gsub(pattern, input$replace_text, 
+                                            field_data, ignore.case = TRUE)
+      } else {
+        rv$data[[input$bulk_field]] <- gsub(input$find_text, input$replace_text, 
+                                            field_data, ignore.case = TRUE, fixed = FALSE)
+      }
+    }
+    
+    showNotification("Replacement applied successfully!", type = "message")
+  })
+  
+  # Fill Down
+  observeEvent(input$apply_filldown, {
+    req(rv$data, input$filldown_field)
+    
+    field_data <- rv$data[[input$filldown_field]]
+    
+    # Fill down logic: propagate last non-empty value
+    for(i in 2:length(field_data)) {
+      if(is.na(field_data[i]) || field_data[i] == "") {
+        field_data[i] <- field_data[i-1]
+      }
+    }
+    
+    rv$data[[input$filldown_field]] <- field_data
+    
+    showNotification("Fill down completed!", type = "message")
+  })
+  
+  output$bulk_status <- renderUI({
+    if(is.null(rv$data)) {
+      tags$p("Load data to use bulk operations")
+    } else {
+      tags$div(
+        class = "alert alert-success",
+        icon("check-circle"),
+        " Data loaded. Select operations above."
+      )
+    }
+  })
+  
+  # Data Cleaning - Preview
+  observeEvent(input$preview_clean, {
+    req(rv$data, input$clean_field, input$clean_operations)
+    
+    field_data <- rv$data[[input$clean_field]]
+    cleaned <- field_data
+    
+    for(op in input$clean_operations) {
+      cleaned <- switch(op,
+        "trim" = trimws(cleaned),
+        "space" = gsub("\\s+", " ", cleaned),
+        "lower" = tolower(cleaned),
+        "upper" = toupper(cleaned),
+        "title" = tools::toTitleCase(cleaned),
+        "special" = gsub("[^[:alnum:][:space:]]", "", cleaned),
+        "numbers" = gsub("[0-9]", "", cleaned),
+        cleaned
+      )
+    }
+    
+    # Show preview of changes
+    changes <- sum(field_data != cleaned, na.rm = TRUE)
+    
+    rv$curation_preview <- data.frame(
+      Original = head(field_data[field_data != cleaned], 10),
+      Cleaned = head(cleaned[field_data != cleaned], 10),
+      stringsAsFactors = FALSE
+    )
+    
+    showNotification(
+      paste("Preview:", changes, "values will be changed"),
+      type = "message",
+      duration = 5
+    )
+  })
+  
+  # Data Cleaning - Apply
+  observeEvent(input$apply_clean, {
+    req(rv$data, input$clean_field, input$clean_operations)
+    
+    field_data <- rv$data[[input$clean_field]]
+    cleaned <- field_data
+    
+    for(op in input$clean_operations) {
+      cleaned <- switch(op,
+        "trim" = trimws(cleaned),
+        "space" = gsub("\\s+", " ", cleaned),
+        "lower" = tolower(cleaned),
+        "upper" = toupper(cleaned),
+        "title" = tools::toTitleCase(cleaned),
+        "special" = gsub("[^[:alnum:][:space:]]", "", cleaned),
+        "numbers" = gsub("[0-9]", "", cleaned),
+        cleaned
+      )
+    }
+    
+    rv$data[[input$clean_field]] <- cleaned
+    
+    showNotification("Cleaning applied successfully!", type = "message")
+  })
+  
+  # Remove Duplicates
+  observeEvent(input$apply_dedup, {
+    req(rv$data, input$dedup_fields)
+    
+    original_rows <- nrow(rv$data)
+    
+    rv$data <- rv$data %>%
+      distinct(across(all_of(input$dedup_fields)), .keep_all = TRUE)
+    
+    removed <- original_rows - nrow(rv$data)
+    
+    showNotification(
+      paste("Removed", removed, "duplicate rows"),
+      type = if(removed > 0) "message" else "warning",
+      duration = 5
+    )
+  })
+  
+  output$clean_status <- renderUI({
+    if(is.null(rv$data)) {
+      tags$p("Load data to use cleaning tools")
+    } else {
+      tags$div(
+        class = "alert alert-info",
+        icon("info-circle"),
+        " Select field and operations above"
+      )
+    }
+  })
+  
+  # Curation Preview Output
+  output$curation_preview <- renderDT({
+    if(!is.null(rv$curation_preview)) {
+      datatable(
+        rv$curation_preview,
+        options = list(pageLength = 10, scrollX = TRUE),
+        rownames = FALSE
+      )
+    } else {
+      datatable(
+        data.frame(Message = "No preview available"),
+        options = list(dom = 't'),
+        rownames = FALSE
+      )
+    }
+  })
+  
+  output$curation_summary <- renderUI({
+    if(!is.null(rv$curation_preview)) {
+      tags$div(
+        class = "alert alert-warning",
+        icon("eye"),
+        sprintf(" Preview showing changes (up to 10 samples)")
+      )
+    } else {
+      tags$p("Preview will appear here when you use curation tools")
+    }
+  })
+  
+  # ========== END DATA CURATION LOGIC ==========
   
   # Export info
   output$export_info <- renderUI({
