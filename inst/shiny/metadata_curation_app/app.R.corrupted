@@ -1,0 +1,1335 @@
+#
+# Metadata Curation and Validation Shiny App
+# OmicsMLRepoCuration Package
+# ODM-inspired interface
+#
+
+library(shiny)
+library(shinydashboard)
+library(DT)
+library(OmicsMLRepoCuration)
+library(yaml)
+library(dplyr)
+library(readr)
+library(jsonlite)
+library(shinyjs)
+library(shinyWidgets)
+
+# Load schema
+schema_file <- system.file("schema", "cmd_schema.yaml", 
+                          package = "OmicsMLRepoCuration")
+schema <- load_metadata_schema(schema_file)
+
+# Get required fields and all field names
+required_fields <- get_required_fields(schema)
+all_fields <- setdiff(names(schema), c("schema_info", "validation_rules", "metadata"))
+
+# UI Definition
+ui <- dashboardPage(
+  skin = "purple",
+  
+  # Header
+  dashboardHeader(
+    title = "Omics Metadata Manager",
+    titleWidth = 300,
+    tags$li(class = "dropdown",
+            tags$style(HTML("
+              .main-header .logo { font-weight: bold; font-size: 18px; }
+              .main-header .navbar { background-color: #6f42c1; }
+            "))
+    )
+  ),
+  
+  # Sidebar
+  dashboardSidebar(
+    width = 280,
+    sidebarMenu(
+      id = "tabs",
+      menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
+      menuItem("Import Data", tabName = "upload", icon = icon("file-import")),
+      menuItem("Study Manager", tabName = "study", icon = icon("project-diagram")),
+      menuItem("Data Editor", tabName = "editor", icon = icon("table")),
+      menuItem("Quality Control", tabName = "validation", icon = icon("check-double")),
+      menuItem("Templates", tabName = "templates", icon = icon("file-alt")),
+      menuItem("Ontology Browser", tabName = "ontology", icon = icon("sitemap")),
+      menuItem("Export", tabName = "export", icon = icon("file-export")),
+      menuItem("Help", tabName = "help", icon = icon("question-circle"))
+    ),
+    hr(),
+    div(style = "padding: 15px;",
+        h5("Project Stats", style = "color: white; font-weight: bold;"),
+        uiOutput("sidebar_stats")
+    )
+  ),
+  
+  # Body
+  dashboardBody(
+    useShinyjs(),
+    tags$head(
+      tags$style(HTML("
+        /* ODM-inspired styling */
+        .content-wrapper { background-color: #f4f6f9; }
+        .box { border-top: 3px solid #6f42c1; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+        .box-header { font-weight: bold; background-color: #fafafa; }
+        .box-title { font-size: 16px; color: #333; }
+        
+        /* Field highlighting */
+        .required-field { background-color: #fff3e0 !important; border-left: 3px solid #ff9800; }
+        .error-field { background-color: #ffebee !important; border-left: 3px solid #f44336; }
+        .warning-field { background-color: #fff9e6 !important; border-left: 3px solid #ffc107; }
+        .valid-field { background-color: #e8f5e9 !important; border-left: 3px solid #4caf50; }
+        
+        /* Status indicators */
+        .validation-error { color: #f44336; font-weight: bold; }
+        .validation-warning { color: #ff9800; font-weight: bold; }
+        .validation-success { color: #4caf50; font-weight: bold; }
+        
+        /* Badges */
+        .dynamic-enum-badge { 
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white; 
+          padding: 3px 8px; 
+          border-radius: 12px; 
+          font-size: 11px;
+          font-weight: bold;
+          display: inline-block;
+          margin: 2px;
+        }
+        .static-enum-badge { 
+        Dashboard Tab
+      tabItem(
+        tabName = "dashboard",
+        fluidRow(
+          box(
+            title = "Import Metadata", 
+            status = "primary", 
+            solidHeader = TRUE,
+            width = 8,
+            icon = icon("file-import"),
+            h4("Upload from File"),
+            fileInput("file_upload", "Choose CSV, TSV, or Excel File",
+                     accept = c("text/csv", "text/tab-separated-values",
+                               ".csv", ".tsv", ".txt", ".xlsx", ".xls"),
+                     width = "100%"),
+            fluidRow(
+              column(6,
+                checkboxInput("header", "File has header row", TRUE)
+              ),
+              column(6,
+                radioButtons("sep", "Separator:",
+                           choices = c("Comma" = ",", "Tab" = "\t", "Semicolon" = ";"),
+                           selected = ",", inline = TRUE)
+              )
+            ),
+            actionButton("load_data", "Import Data", 
+                        class = "btn-primary btn-lg btn-block", 
+                        icon = icon("upload")),
+            hr(),
+            h4("Or Start from Template"),
+            fluidRow(
+            icon = icon("eye"),
+            uiOutput("upload_summary"),
+            hr(),
+            DTOutput("upload_preview")
+          )
+        )
+      ),
+      
+      # Study Manager Tab
+      tabItem(
+        tabName = "study",
+        fluidRow(
+          box(
+            title = "Study Organization",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 4,
+            icon = icon("project-diagram"),
+            h4("Studies"),
+            actionButton("add_study", "Add Study", class = "btn-success btn-sm", 
+            icon = icon("table"),
+            fluidRow(
+              column(12,
+                div(style = "margin-bottom: 15px;",
+                  actionButton("add_row", "Add Sample", icon = icon("plus"), 
+                              class = "btn-success"),
+                  actionButton("delete_row", "Delete Selected", 
+                              icon = icon("trash"), class = "btn-danger"),
+                  actionButton("duplicate_row", "Duplicate Sample", 
+                              icon = icon("copy"), class = "btn-info"),
+                  actionButton("add_column", "Add Field", icon = icon("columns"),
+                              class = "btn-info"),
+                  actionButton("validate_inline", "Validate", 
+                              icon = icon("check"), class = "btn-warning"),
+                  div(style = "float: right;",
+                    downloadButton("download_data", "Download", class = "btn-primary")
+                  )
+                )
+              )
+            ),
+            uiOutput("editor_info
+            solidHeader = TRUE,
+            width = 8,
+            icon = icon("info-circle"),
+            uiOutput("study_details
+                numericInput("n_rows", "Number of samples:", 
+                           value = 10, min = 1, max = 1000, width = "100%")
+              ),
+              column(6,
+                selectInput("template_type", "Template type:",
+                          choices = c("Minimal (required fields only)" = "minimal",
+                                    "Standard (common fields)" = "standard",
+                                    "Full (all fields)" = "full"),
+                          width = "100%")
+              )
+            ),
+            actionButton("create_template", "Create from Template", 
+                        class = "btn-success btn-lg btn-block", icon = icon("plus-square"))
+          ),
+          box(
+            title = "Import Options",
+            status = "info",
+            solidHeader = TRUE,
+            width = 4,
+            h5("Supported Formats:"),
+            tags$ul(
+              tags$li("CSV (Comma-separated)"),
+              tags$li("TSV (Tab-separated)"),
+              tags$li("Excel (.xlsx, .xls)"),
+              tags$li("Custom delimiters")
+            ),
+            hr(),
+            h5("Data Requirements:"),
+            tags$ul(
+              tags$li("Column names must match schema"),
+              tags$li("Required fields must be present"),
+              tags$li("Use standard ontology IDs"),
+              tags$li("Check delimiter for multi-values")
+            ),
+            hr(),
+            actionButton("load_demo", "Load Demo Data", 
+                        class = "btn-info btn-block", icon = icon("flask
+            solidHeader = TRUE,
+            width = 6,
+            plotOutput("completeness_plot", height = "300px")
+          ),
+          box(
+            title = "Validation Status",
+            status = "warning",
+            solidHeader = TRUE,
+            width = 6,
+            plotOutput("validation_plot", height = "300px")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Recent Activity",
+            status = "success",
+            solidHeader = TRUE,
+            width = 12,
+            DTOutput("activity_log")
+          )
+        )
+      ),
+      
+      #   background-color: #607d8b; 
+          color: white; 
+          padding: 3px 8px; 
+          border-radius: 12px; 
+          font-size: 11px;
+          font-weight: bold;
+          display: inline-block;
+          margin: 2px;
+        }
+        .required-badge {
+          background-color: #ff9800;
+          color: white;
+          padding: 2px 6px;
+          border-radius: 3px;
+          font-size: 10px;
+          font-weight: bold;
+          margin-left: 5px;
+        }
+        
+        /* Cards */
+        .field-card { 
+          margin-bottom: 15px; 
+          padding: 15px; 
+          border: 1px solid #e0e0e0; 
+          border-radius: 8px;
+          background-color: white;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+          transition: all 0.3s ease;
+        }
+        .field-card:hover {
+          box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+          transform: translateY(-2px);
+        }
+        
+        /* Info boxes */
+        .info-box { 
+          margin-bottom: 15px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          border-radius: 4px;
+        }
+        .info-box-icon { border-radius: 4px 0 0 4px; }
+        
+        /* Buttons */
+        .btn-primary { 
+          background-color: #6f42c1; 
+          border-color: #6f42c1;
+          font-weight: bold;
+        }
+        .btn-primary:hover { 
+          background-color: #5a32a3; 
+          border-color: #5a32a3;
+        }
+        
+        /* Tables */
+        .dataTables_wrapper { font-size: 13px; }
+        table.dataTable thead th { 
+          background-color: #f5f5f5; 
+          font-weight: bold;
+          border-bottom: 2px solid #6f42c1;
+        }
+        
+        /* Progress bars */
+        .progress { height: 25px; border-radius: 4px; }
+        .progress-bar { font-weight: bold; }
+        
+        /* Quality metrics */
+        .metric-card {
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          margin-bottom: 15px;
+          text-align: center;
+        }
+        .metric-value {
+          font-size: 36px;
+          font-weight: bold;
+          color: #6f42c1;
+        }
+        .metric-label {
+          font-size: 14px;
+          color: #666;
+          margin-top: 5px;
+        }
+        
+        /* Study hierarchy */
+        .study-item {
+          padding: 12px;
+          margin: 8px 0;
+          border: 1px solid #e0e0e0;
+          border-radius: 6px;
+          background-color: white;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .study-item:hover {
+          background-color: #f5f5f5;
+          border-color: #6f42c1;
+        }
+        .study-item.selected {
+          background-color: #ede7f6;
+          border-color: #6f42c1;
+          border-width: 2adge { 
+          background-color: #17a2b8; 
+          color: white; 
+          padding: 2px 6px; 
+          border-radius: 3px; 
+          font-size: 10px;
+        }
+        .static-enum-badge { 
+          background-color: #6c757d; 
+          color: white; 
+          padding: 2px 6px; 
+          border-radius: 3px; 
+          font-size: 10px;
+        }
+      "))
+    ),
+    
+    tabItems(
+      # Upload Tab
+      tabItem(
+        tabName = "upload",
+        fluidRow(
+          box(
+            title = "Upload Metadata File", 
+            status = "primary", 
+            solidHeader = TRUE,
+            width = 12,
+            fileInput("file_upload", "Choose CSV or TSV File",
+                     accept = c("text/csv", "text/tab-separated-values",
+                               ".csv", ".tsv", ".txt")),
+            checkboxInput("header", "File has header row", TRUE),
+            radioButtons("sep", "Separator:",
+                        choices = c("Comma" = ",", "Tab" = "\t", "Semicolon" = ";"),
+                        selected = ","),
+            actionButton("load_data", "Load Data", 
+                        class = "btn-primary", icon = icon("upload")),
+            hr(),
+            h4("Or create new dataset from template:"),
+            numericInput("n_rows", "Number of rows:", value = 10, min = 1, max = 1000),
+            actionButton("create_template", "Create Template", 
+                        class = "btn-success", icon = icon("plus"))
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Data Preview",
+            status = "info",
+            solidHeader = TRUE,
+            width = 12,
+            DTOutput("upload_preview")
+          )
+        )
+      ),
+      
+      # Editor Tab
+      tabItem(
+        tabName = "editor",
+        fluidRow(
+          box(
+            title = "Metadata Editor",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12,
+            actionButton("add_row", "Add Row", icon = icon("plus"), 
+                        class = "btn-success"),
+            actionButton("delete_row", "Delete Selected Row(s)", 
+                        icon = icon("trash"), class = "btn-danger"),
+            actionButton("add_column", "Add Column", icon = icon("columns"),
+                        class = "btn-info"),
+            downloadButton("download_data", "Download Data", class = "btn-primary"),
+            hr(),
+            DTOutput("data_table")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Add Field",
+            status = "info",
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = 12,
+            fluidRow(
+              column(6,
+                selectInput("new_column_select", "Select from Schema:",
+                           choices = NULL, width = "100%")
+              ),
+              column(6,
+                textInput("new_column_name", "Or enter custom field name:",
+                         width = "100%")
+              )
+            ),
+            actionButton("confirm_add_column", "Add Field", 
+                        class = "btn-primary", icon = icon("plus"))
+          )
+        )
+      ),
+      
+      # Quality Control Tab (formerly Validation)
+      tabItem(
+        tabName = "validation",
+        fluidRow(
+          infoBoxOutput("valid_box", width = 3),
+          infoBoxOutput("error_box", width = 3),
+          infoBoxOutput("warning_box", width = 3),
+          infoBoxOutput("completeness_box", width = 3)
+        ),
+        fluidRow(
+          box(
+            title = "Quality Control Actions",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12,
+            icon = icon("check-double"),
+            actionButton("run_validation", "Run Full Validation", 
+                    6,
+            icon = icon("list-alt"),
+            verbatimTextOutput("validation_results")
+          ),
+          box(
+            title = "Issues Summary",
+            status = "danger",
+            solidHeader = TRUE,
+            width = 6,
+            icon = icon("exclamation-circle"),
+            DTOutput("issues_table")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Field Completeness Report",
+            status = "info",
+            solidHeader = TRUE,
+            width = 12,
+            icon = icon("chart-bar"),
+            DTOutput("field_validation_table")
+          )
+        )
+      ),
+      
+      # Templates Tab
+      tabItem(
+        tabName = "templates",
+        fluidRow(
+          box(
+            title = "Template Library",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 4,
+            icon = icon("file-alt"),
+            h4("Available Templates"),
+            p("Select a template to view or apply to your data."),
+            hr(),
+            div(class = "study-item",
+                h5("Minimal Template"),
+                p("Required fields only", style = "font-size: 12px; color: #666;"),
+            icon = icon("database"),
+            fluidRow(
+              column(3,
+                div(class = "metric-card",
+                    div(class = "metric-value", textOutput("schema_version_text")),
+                    div(class = "metric-label", "Schema Version")
+                )
+              ),
+              column(3,
+                div(class = "metric-card",
+                    div(class = "metric-value", textOutput("total_fields_text")),
+                    div(class = "metric-label", "Total Fields")
+                )
+              ),
+              column(3,
+                div(class = "metric-card",
+                    div(class = "metric-value", textOutput("required_fields_text")),
+                    div(class = "metric-label", "Required Fields")
+                )
+              ),
+              column(3,
+                div(class = "metric-card",
+                    div(class = "metric-value", textOutput("dynamic_enum_text")),
+                    div(class = "metric-label", "Dynamic Enums")
+                )
+              )
+            )
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Field Browser",
+            status = "info",
+            solidHeader = TRUE,
+            width = 5,
+            icon = icon("search"),
+            textInput("field_search", "Search fields:", 
+                     placeholder = "Type to search...", width = "100%"),
+            selectInput("filter_category", "Filter by:",
+                       choices = c("All Fields" = "all",
+                                 "Required Only" = "required",
+                                 "Optional Only" = "optional",
+                                 "Dynamic Enums" = "dynamic",
+                                 "Static Enums" = "static"),
+                       width = "100%"),
+            hr(),
+            selectInput("schema_field_select", "Select Field:",
+                       choices = all_fields, width = "100%")
+          ),
+          box(
+            title = "Field Details",
+            status = "success",
+            solidHeader = TRUE,
+            width = 7,
+            icon = icon("info-circle"),
+            uiOutput("schema_field_details")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "All Fields Reference",
+            status = "warning",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            width = 12,
+            icon = icon("book"),
+            DTOutput("schema_summary_table")
+          )
+        )
+      ),
+      
+      # Export Tab
+      tabItem(
+        tabName = "export",
+        fluidRow(
+          box(
+            title = "Export Data",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 6,
+            icon = icon("file-export"),
+            h4("Export Formats"),
+            selectInput("export_format", "Choose format:",
+                       choices = c("CSV (Comma-separated)" = "csv",
+                                 "TSV (Tab-separated)" = "tsv",
+                                 "Excel (.xlsx)" = "xlsx",
+                                 "JSON" = "json",
+                                 "YAML" = "yaml"),
+                       width = "100%"),
+            checkboxInput("export_validated_only", 
+                         "Export only if validation passes", 
+                         value = TRUE),
+            checkboxInput("include_metadata", 
+                         "Include schema metadata", 
+                         value = FALSE),
+            hr(),
+            downloadButton("download_export", "Download Export", 
+                          class = "btn-success btn-lg btn-block"),
+            hr(),
+            h4("Submission Preparation"),
+            p("Prepare data for public repository submission:"),
+            actionButton("prepare_geo", "Prepare for GEO", 
+                        class = "btn-info btn-block", icon = icon("database")),
+            actionButton("prepare_ena", "Prepare for ENA", 
+                        class = "btn-info btn-block", icon = icon("database"))
+          ),
+          box(
+            title = "Export Preview",
+            status = "info",
+            solidHeader = TRUE,
+            width = 6,
+            icon = icon("eye"),
+            uiOutput("export_info"),
+            hr(),
+            verbatimTextOutput("export_preview
+        )
+      ),
+      
+      # Ontology Browser Tab (formerly Schema Browser)
+      tabItem(
+        tabName = "ontology
+        ),
+        fluidRow(
+          box(
+            title = "Field-by-Field Report",
+            status = "info",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            width = 12,
+            DTOutput("field_validation_table")
+          )
+        )
+      ),
+      
+      # Schema Browser Tab
+      tabItem(
+        tabName = "schema",
+        fluidRow(
+          box(
+            title = "Schema Information",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12,
+            h4(paste("Schema:", schema$schema_info$name)),
+            p(paste("Version:", schema$schema_info$version)),
+            p(paste("Last Updated:", schema$schema_info$last_updated)),
+            p(paste("Total Fields:", length(all_fields))),
+            p(paste("Required Fields:", length(required_fields)))
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Browse Schema Fields",
+            status = "info",
+            solidHeader = TRUE,
+            width = 12,
+            selectInput("schema_field_select", "Select Field:",
+                       choices = all_fields),
+            uiOutput("schema_field_details")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "All Fields Summary",
+            status = "success",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = 12,
+            DTOutput("schema_summary_table")
+          )
+        )
+      ),
+      
+      # Help Tab
+      tabItem(
+        tabName = "help",
+        fluidRow(
+          box(
+            title = "Getting Started",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12,
+            h3("How to Use This App"),
+            tags$ol(
+              tags$li(tags$b("Upload Data:"), " Go to the 'Data Upload' tab and load your CSV/TSV file, or create a new template."),
+              tags$li(tags$b("Edit Metadata:"), " Use the 'Data Editor' tab to add/remove rows and columns, and edit cell values."),
+              tags$li(tags$b("Validate:"), " Click 'Validation' tab and run validation to check for errors."),
+              tags$li(tags$b("Browse Schema:"), " View field definitions and requirements in the 'Schema Browser' tab."),
+              tags$li(tags$b("Download:"), " Export your curated and validated data from the Editor tab.")
+            ),
+            hr(),
+            h3("Required Fields"),
+            p("The following fields are required and must be present:"),
+            tags$ul(
+              lapply(required_fields, function(f) tags$li(tags$code(f)))
+            ),
+            hr(),
+            h3("Dynamic Enums"),
+            p("Some fields use dynamic enums based on ontology hierarchies:"),
+            tags$ul(
+              tags$li(tags$b("ancestry:"), " Uses HANCESTRO ontology children"),
+              tags$li(tags$b("ancestry_details:"), " Uses HANCESTRO ontology descendants"),
+              tags$li("Check the Schema Browser for specific ontology roots and properties")
+            ),
+            hr(),
+            h3("Validation Tips"),
+            tags$ul(
+              tags$li("Errors indicate critical issues (e.g., missing required fields)"),
+              tags$li("Warnings indicate potential issues (e.g., type mismatches, pattern violations)"),
+              tags$li("Fix all errors before submitting your data"),
+              tags$li("Review warnings and fix as appropriate")
+            )
+          )
+        )
+      )
+    )
+  )
+)
+
+# Server Logic
+server <- function(input, output, session) {
+  
+  # Reactive values
+  rv <- reactiveValues(
+    data = NULL,
+    validation_results = NULL,
+    selected_rows = NULL,
+    activity_log = data.frame(
+      Timestamp = character(),
+      Action = character(),
+      Details = character(),
+      stringsAsFactors = FALSE
+    ),
+    studies = list(),
+    current_study = NULL
+  )
+  
+  # Helper function to log activity
+  log_activity <- function(action, details = "") {
+    new_entry <- data.frame(
+      Timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+      Action = action,
+      Details = details,
+      stringsAsFactors = FALSE
+    )
+    rv$activity_log <- rbind(new_entry, rv$activity_log)
+    if (nrow(rv$activity_log) > 100) {
+      rv$activity_log <- rv$activity_log[1:100, ]
+    }
+  }
+  
+  # Dashboard value boxes
+  output$vbox_samples <- renderValueBox({
+    n_samples <- if(is.null(rv$data)) 0 else nrow(rv$data)
+    valueBox(
+      value = n_samples,
+      subtitle = "Total Samples",
+      icon = icon("flask"),
+      color = "purple"
+    )
+  })
+  
+  output$vbox_fields <- renderValueBox({
+    n_fields <- if(is.null(rv$data)) 0 else ncol(rv$data)
+    valueBox(
+      value = n_fields,
+      subtitle = "Metadata Fields",
+      icon = icon("columns"),
+      color = "blue"
+    )
+  })
+  
+  output$vbox_completeness <- renderValueBox({
+    if(is.null(rv$data)) {
+      completeness <- 0
+    } else {
+      completeness <- round(mean(apply(rv$data, 2, function(x) 
+        sum(!is.na(x) & x != "")) / nrow(rv$data)) * 100, 1)
+    }
+    valueBox(
+      value = paste0(completeness, "%"),
+      subtitle = "Completeness",
+      icon = icon("chart-pie"),
+      color = if(completeness >= 80) "green" else if(completeness >= 50) "yellow" else "red"
+    )
+  })
+  
+  output$vbox_quality <- renderValueBox({
+    quality <- if(is.null(rv$validation_results)) {
+      "Not Assessed"
+    } else if(rv$validation_results$valid) {
+      "Passed"
+    } else {
+      "Issues Found"
+    }
+    valueBox(
+      value = quality,
+      subtitle = "Quality Status",
+      icon = icon("check-circle"),
+      color = if(quality == "Passed") "green" else if(quality == "Not Assessed") "light-blue" else "red"
+    )
+  })
+  
+  # Activity log
+  output$activity_log <- renderDT({
+    datatable(
+      rv$activity_log,
+      options = list(pageLength = 10, scrollX = TRUE, dom = 't'),
+      rownames = FALSE
+    )
+  })
+  
+  # Completeness and validation plots
+  output$completeness_plot <- renderPlot({
+    if(is.null(rv$data)) {
+      plot.new()
+      text(0.5, 0.5, "No data loaded", cex = 1.5, col = "gray")
+    } else {
+      field_completeness <- apply(rv$data, 2, function(x) 
+        sum(!is.na(x) & x != "") / length(x) * 100)
+      
+      par(mar = c(8, 4, 2, 1))
+      barplot(sort(field_completeness, decreasing = TRUE)[1:min(10, length(field_completeness))], 
+              main = "Top 10 Field Completeness (%)",
+              ylab = "Completeness %",
+              col = ifelse(field_completeness >= 80, "#4caf50", 
+                    ifelse(field_completeness >= 50, "#ffc107", "#f44336")),
+              las = 2,
+              cex.names = 0.7,
+              ylim = c(0, 100))
+    }
+  })
+  
+  output$validation_plot <- renderPlot({
+    if(is.null(rv$validation_results)) {
+      plot.new()
+      text(0.5, 0.5, "Run validation first", cex = 1.5, col = "gray")
+    } else {
+      counts <- c(
+        Passed = if(rv$validation_results$valid && 
+                   length(rv$validation_results$warnings) == 0) 1 else 0,
+        Warnings = length(rv$validation_results$warnings),
+        Errors = length(rv$validation_results$errors)
+      )
+      
+      par(mar = c(4, 4, 2, 1))
+      barplot(counts,
+              main = "Validation Summary",
+              col = c("#4caf50", "#ffc107", "#f44336"),
+              ylab = "Count")
+    }
+  })
+  
+  # Schema metrics
+  output$schema_version_text <- renderText({ schema$schema_info$version })
+  output$total_fields_text <- renderText({ as.character(length(all_fields)) })
+  output$required_fields_text <- renderText({ as.character(length(required_fields)) })
+  output$dynamic_enum_text <- renderText({
+    dynamic_count <- sum(sapply(all_fields, function(f) {
+      field_def <- get_field_definition(schema, f)
+      !is.null(field_def$ontology) && !is.null(field_def$ontology$roots)
+    }))
+    as.character(dynamic_count)
+  })
+  
+  # Update column choices for adding new columns
+  observe({
+    available_fields <- if (is.null(rv$data)) {
+      all_fields
+    } else {
+      setdiff(all_fields, colnames(rv$data))
+    }
+    updateSelectInput(session, "new_column_select", 
+                     choices = c("Choose from schema..." = "", available_fields))
+  })
+  
+  # Sidebar stats
+  output$sidebar_stats <- renderUI({
+    if (is.null(rv$data)) {
+      tags$div(
+        style = "color: #ddd;",
+        p("No data loaded", style = "font-size: 13px;"),
+        p("Import or create data to begin", style = "font-size: 11px;")
+      )
+    } else {
+      req_present <- sum(required_fields %in% colnames(rv$data))
+      completeness <- round(mean(apply(rv$data, 2, function(x) sum(!is.na(x) & x != "")) / nrow(rv$data)) * 100, 1)
+      
+      tags$div(
+        style = "color: white;",
+        tags$div(style = "background-color: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;",
+          tags$div(style = "font-size: 20px; font-weight: bold;", nrow(rv$data)),
+          tags$div(style = "font-size: 11px; opacity: 0.9;", "Samples")
+        ),
+        tags$div(style = "background-color: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;",
+          tags$div(style = "font-size: 20px; font-weight: bold;", ncol(rv$data)),
+          tags$div(style = "font-size: 11px; opacity: 0.9;", "Fields")
+        ),
+        tags$div(style = "background-color: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px; margin-bottom: 8px;",
+          tags$div(style = "font-size: 20px; font-weight: bold;", 
+                  paste0(req_present, "/", length(required_fields))),
+          tags$div(style = "font-size: 11px; opacity: 0.9;", "Required")
+        ),
+        tags$div(style = "background-color: rgba(255,255,255,0.1); padding: 8px; border-radius: 4px;",
+          tags$div(style = "font-size: 20px; font-weight: bold;", paste0(completeness, "%")),
+          tags$div(style = "font-size: 11px; opacity: 0.9;", "Complete")
+        )
+      )
+    }
+  })
+  
+  # Load data from file
+  observeEvent(input$load_data, {
+    req(input$file_upload)
+    
+    tryCatch({
+      rv$data <- read.delim(input$file_upload$datapath,
+                           sep = input$sep,
+                           header = input$header,
+                           stringsAsFactors = FALSE,
+                           check.names = FALSE)
+      
+      log_activity("Data Import", paste("Loaded", nrow(rv$data), "samples"))
+      showNotification("Data loaded successfully!", type = "message")
+      updateTabItems(session, "tabs", "dashboard")
+    }, error = function(e) {
+      showNotification(paste("Error loading file:", e$message), type = "error")
+    })
+  })
+  
+  # Create template
+  observeEvent(input$create_template, {
+    req(input$n_rows)
+    
+    # Create template with required fields
+    template_data <- data.frame(matrix(NA, nrow = input$n_rows, 
+                                      ncol = length(required_fields)))
+    colnames(template_data) <- required_fields
+    
+    # Initialize with empty strings
+    template_data[] <- lapply(template_data, function(x) rep("", input$n_rows))
+    
+    rv$data <- template_data
+    log_activity("Template Created", paste(input$n_rows, "samples, required fields only"))
+    showNotification("Template created! Add data and validate.", type = "message")
+    updateTabItems(session, "tabs", "editor")
+  })
+  
+  # Completeness box for validation tab
+  output$completeness_box <- renderInfoBox({
+    if(is.null(rv$data)) {
+      completeness <- 0
+    } else {
+      completeness <- round(mean(apply(rv$data, 2, function(x) 
+        sum(!is.na(x) & x != "")) / nrow(rv$data)) * 100, 1)
+    }
+    
+    infoBox(
+      "Completeness", 
+      paste0(completeness, "%"),
+      icon = icon("chart-pie"),
+      color = if(completeness >= 80) "green" else if(completeness >= 50) "yellow" else "red"
+    )
+  })
+    
+    rv$data <- template_data
+    showNotification("Template created! Add data and validate.", type = "message")
+    updateTabItems(session, "tabs", "editor")
+  })
+  
+  # Upload preview
+  output$upload_preview <- renderDT({
+    req(rv$data)
+    datatable(head(rv$data, 100), 
+             options = list(scrollX = TRUE, pageLength = 10),
+             rownames = FALSE)
+  })
+  
+  # Data editor table
+  output$data_table <- renderDT({
+    req(rv$data)
+    
+    datatable(
+      rv$data,
+      editable = TRUE,
+      selection = 'multiple',
+      options = list(
+        scrollX = TRUE,
+        pageLength = 25,
+        dom = 'Bfrtip'
+      ),
+      rownames = TRUE,
+      class = 'cell-border stripe'
+    ) %>%
+      formatStyle(
+        columns = which(colnames(rv$data) %in% required_fields),
+        backgroundColor = '#fff3cd'
+      )
+  })
+  
+  # Handle cell edits
+  observeEvent(input$data_table_cell_edit, {
+    info <- input$data_table_cell_edit
+    rv$data[info$row, info$col] <- info$value
+  })
+  
+  # Track selected rows
+  observe({
+    rv$selected_rows <- input$data_table_rows_selected
+  })
+  
+  # Add row
+  observeEvent(input$add_row, {
+    req(rv$data)
+    
+    new_row <- data.frame(matrix("", nrow = 1, ncol = ncol(rv$data)))
+    colnames(new_row) <- colnames(rv$data)
+    
+    rv$data <- rbind(rv$data, new_row)
+    showNotification("Row added", type = "message")
+  })
+  
+  # Delete row
+  observeEvent(input$delete_row, {
+    req(rv$data, rv$selected_rows)
+    
+    rv$data <- rv$data[-rv$selected_rows, , drop = FALSE]
+    showNotification(paste("Deleted", length(rv$selected_rows), "row(s)"), 
+                    type = "warning")
+  })
+  
+  # Add column
+  observeEvent(input$confirm_add_column, {
+    req(rv$data)
+    
+    new_col_name <- if (input$new_column_select != "") {
+      input$new_column_select
+    } else if (input$new_column_name != "") {
+      input$new_column_name
+    } else {
+      return()
+    }
+    
+    if (new_col_name %in% colnames(rv$data)) {
+      showNotification("Column already exists!", type = "warning")
+      return()
+    }
+    
+    rv$data[[new_col_name]] <- ""
+    showNotification(paste("Column", new_col_name, "added"), type = "message")
+    
+    # Reset inputs
+    updateSelectInput(session, "new_column_select", selected = "")
+    updateTextInput(session, "new_column_name", value = "")
+  })
+  
+  # Download data
+  output$download_data <- downloadHandler(
+    filename = function() {
+      paste0("curated_metadata_", Sys.Date(), ".csv")
+    },
+    content = function(file) {
+      write.csv(rv$data, file, row.names = FALSE)
+    }
+  )
+  
+  # Run validation
+  observeEvent(input$run_validation, {
+    req(rv$data)
+    
+    withProgress(message = 'Validating data...', value = 0, {
+      incProgress(0.3)
+      
+      rv$validation_results <- validate_data_against_schema(rv$data, schema)
+      
+      incProgress(0.7)
+      
+      showNotification("Validation complete!", type = "message")
+    })
+  })
+  
+  # Clear validation
+  observeEvent(input$clear_validation, {
+    rv$validation_results <- NULL
+  })
+  
+  # Validation info boxes
+  output$valid_box <- renderInfoBox({
+    if (is.null(rv$validation_results)) {
+      infoBox(
+        "Status", "Not Run", icon = icon("question-circle"),
+        color = "light-blue"
+      )
+    } else {
+      infoBox(
+        "Status", 
+        if (rv$validation_results$valid) "PASSED" else "FAILED",
+        icon = icon(if (rv$validation_results$valid) "check-circle" else "times-circle"),
+        color = if (rv$validation_results$valid) "green" else "red"
+      )
+    }
+  })
+  
+  output$error_box <- renderInfoBox({
+    n_errors <- if (is.null(rv$validation_results)) {
+      0
+    } else {
+      length(rv$validation_results$errors)
+    }
+    
+    infoBox(
+      "Errors", n_errors, icon = icon("exclamation-triangle"),
+      color = if (n_errors > 0) "red" else "green"
+    )
+  })
+  
+  output$warning_box <- renderInfoBox({
+    n_warnings <- if (is.null(rv$validation_results)) {
+      0
+    } else {
+      length(rv$validation_results$warnings)
+    }
+    
+    infoBox(
+      "Warnings", n_warnings, icon = icon("exclamation-circle"),
+      color = if (n_warnings > 0) "yellow" else "green"
+    )
+  })
+  
+  # Validation results text
+  output$validation_results <- renderPrint({
+    req(rv$validation_results)
+    
+    cat("=== VALIDATION RESULTS ===\n\n")
+    
+    cat("Overall Status:", 
+        if (rv$validation_results$valid) "✓ PASSED" else "✗ FAILED", "\n\n")
+    
+    if (length(rv$validation_results$errors) > 0) {
+      cat("ERRORS:\n")
+      for (i in seq_along(rv$validation_results$errors)) {
+        cat(sprintf("  [%d] %s\n", i, rv$validation_results$errors[i]))
+      }
+      cat("\n")
+    } else {
+      cat("✓ No errors found\n\n")
+    }
+    
+    if (length(rv$validation_results$warnings) > 0) {
+      cat("WARNINGS:\n")
+      for (i in seq_along(rv$validation_results$warnings)) {
+        cat(sprintf("  [%d] %s\n", i, rv$validation_results$warnings[i]))
+      }
+      cat("\n")
+    } else {
+      cat("✓ No warnings\n\n")
+    }
+    
+    if (rv$validation_results$valid && length(rv$validation_results$warnings) == 0) {
+      cat("\n✓✓✓ Data is valid and ready for submission! ✓✓✓\n")
+    }
+  })
+  
+  # Field validation table
+  output$field_validation_table <- renderDT({
+    req(rv$data)
+    
+    # Create field validation summary
+    field_info <- lapply(colnames(rv$data), function(field) {
+      in_schema <- field %in% all_fields
+      is_required <- field %in% required_fields
+      
+      status <- if (!in_schema) {
+        "Not in schema"
+      } else if (is_required) {
+        "Required"
+      } else {
+        "Optional"
+      }
+      
+      # Count non-empty values
+      non_empty <- sum(!is.na(rv$data[[field]]) & rv$data[[field]] != "")
+      
+      data.frame(
+        Field = field,
+        Status = status,
+        NonEmpty = non_empty,
+        Total = nrow(rv$data),
+        PercentFilled = round(100 * non_empty / nrow(rv$data), 1),
+        stringsAsFactors = FALSE
+      )
+    })
+    
+    field_df <- do.call(rbind, field_info)
+    
+    datatable(
+      field_df,
+      options = list(pageLength = 25, scrollX = TRUE),
+      rownames = FALSE
+    ) %>%
+      formatStyle(
+        'Status',
+        backgroundColor = styleEqual(
+          c('Required', 'Optional', 'Not in schema'),
+          c('#fff3cd', '#d1ecf1', '#f8d7da')
+        )
+      ) %>%
+      formatStyle(
+        'PercentFilled',
+        background = styleColorBar(c(0, 100), '#90EE90'),
+        backgroundSize = '100% 90%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'center'
+      )
+  })
+  
+  # Schema field details
+  output$schema_field_details <- renderUI({
+    req(input$schema_field_select)
+    
+    field_def <- get_field_definition(schema, input$schema_field_select)
+    
+    tags$div(
+      class = "field-card",
+      h4(field_def$col_name),
+      tags$p(tags$b("Type: "), field_def$col_class),
+      tags$p(tags$b("Required: "), ifelse(field_def$required, "Yes", "No")),
+      tags$p(tags$b("Multiple Values: "), ifelse(field_def$multiple_values, "Yes", "No")),
+      tags$p(tags$b("Uniqueness: "), field_def$uniqueness),
+      hr(),
+      tags$p(tags$b("Description:")),
+      tags$p(field_def$description),
+      
+      # Validation info
+      if (!is.null(field_def$validation)) {
+        tags$div(
+          hr(),
+          h5("Validation Rules:"),
+          if (!is.null(field_def$validation$pattern)) {
+            tags$p(tags$b("Pattern: "), tags$code(field_def$validation$pattern))
+          },
+          if (!is.null(field_def$validation$allowed_values)) {
+            tags$div(
+              tags$p(tags$b("Allowed Values: "), 
+                    tags$span(class = "static-enum-badge", "Static Enum")),
+              tags$ul(
+                lapply(field_def$validation$allowed_values, function(v) tags$li(v))
+              )
+            )
+          },
+          if (!is.null(field_def$validation$delimiter)) {
+            tags$p(tags$b("Delimiter: "), tags$code(field_def$validation$delimiter))
+          }
+        )
+      },
+      
+      # Ontology info
+      if (!is.null(field_def$ontology)) {
+        tags$div(
+          hr(),
+          h5("Ontology Information:"),
+          tags$span(class = "dynamic-enum-badge", "Dynamic Enum"),
+          if (!is.null(field_def$ontology$roots)) {
+            tags$div(
+              tags$p(tags$b("Root Terms:")),
+              tags$ul(
+                lapply(field_def$ontology$roots, function(r) tags$li(tags$code(r)))
+              )
+            )
+          },
+          if (!is.null(field_def$ontology$property)) {
+            tags$p(tags$b("Property: "), field_def$ontology$property)
+          },
+          if (!is.null(field_def$ontology$terms)) {
+            tags$div(
+              tags$p(tags$b("Ontology Terms:")),
+              tags$ul(
+                lapply(field_def$ontology$terms, function(t) tags$li(tags$code(t$id)))
+              )
+            )
+          }
+        )
+      }
+    )
+  })
+  
+  # Schema summary table
+  output$schema_summary_table <- renderDT({
+    
+    # Create summary for all fields
+    summary_data <- lapply(all_fields, function(field) {
+      field_def <- get_field_definition(schema, field)
+      
+      validation_type <- "None"
+      if (!is.null(field_def$validation$allowed_values)) {
+        validation_type <- "Static Enum"
+      } else if (!is.null(field_def$validation$pattern)) {
+        validation_type <- "Pattern"
+      }
+      
+      if (!is.null(field_def$ontology)) {
+        validation_type <- "Dynamic Enum"
+      }
+      
+      data.frame(
+        Field = field,
+        Type = field_def$col_class,
+        Required = ifelse(field_def$required, "Yes", "No"),
+        MultiValue = ifelse(field_def$multiple_values, "Yes", "No"),
+        Validation = validation_type,
+        Description = substr(field_def$description, 1, 100),
+        stringsAsFactors = FALSE
+      )
+    })
+    
+    summary_df <- do.call(rbind, summary_data)
+    
+    datatable(
+      summary_df,
+      options = list(
+        pageLength = 25,
+        scrollX = TRUE,
+        dom = 'Bfrtip'
+      ),
+      rownames = FALSE,
+      filter = 'top'
+    ) %>%
+      formatStyle(
+        'Required',
+        backgroundColor = styleEqual(c('Yes', 'No'), c('#fff3cd', 'white'))
+      ) %>%
+      formatStyle(
+        'Validation',
+        backgroundColor = styleEqual(
+          c('Dynamic Enum', 'Static Enum', 'Pattern', 'None'),
+          c('#d1ecf1', '#e2e3e5', '#d4edda', 'white')
+        )
+      )
+  })
+}
+
+# Run the app
+shinyApp(ui = ui, server = server)

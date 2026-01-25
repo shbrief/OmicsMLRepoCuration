@@ -1,0 +1,14 @@
+# Quick fix note:
+# The app.R file became corrupted during edits with multiple unclosed quotes.
+# Please use this simpler working version or restore from the package reinstall.
+# Key issues found:
+# - Line 38: Missing closing for tags$style(HTML("..."))
+# - Line 170: uiOutput("editor_info - missing closing quote
+# - Line 174: uiOutput("study_details - missing closing quote  
+# - Line 206: icon("flask - missing closing quote
+# - Structural misplacements of code blocks
+
+# To fix: Either reinstall package or manually fix the quoted strings above.
+
+# Recommendation: Start with the original simpler app and add ODM features incrementally
+# rather than all at once to avoid such structural issues.

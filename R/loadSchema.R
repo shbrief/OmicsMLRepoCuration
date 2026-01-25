@@ -79,6 +79,7 @@ get_field_definition <- function(schema, field_name) {
 #'   print(required_fields)
 #' }
 #'
+#' @export
 get_required_fields <- function(schema) {
   required <- c()
   for (field_name in names(schema)) {
@@ -117,7 +118,8 @@ get_required_fields <- function(schema) {
 #'     print(fields)
 #'   }
 #' }
-#'
+#' 
+#' @export
 get_fields_by_category <- function(schema, category) {
     fields_in_category <- c()
     
@@ -158,6 +160,7 @@ get_fields_by_category <- function(schema, category) {
 #'   print(categories)
 #' }
 #'
+#' @export
 get_all_categories <- function(schema) {
     categories <- c()
     
