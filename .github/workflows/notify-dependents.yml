@@ -1,0 +1,53 @@
+name: Notify Dependent Repositories
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'inst/schema/**'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  notify-metadata-repo:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Get schema version/commit
+        id: schema
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          
+          # Get list of changed schema files
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD -- inst/schema/ | tr '\n' ', ')
+          echo "changed_files=${CHANGED_FILES}" >> $GITHUB_OUTPUT
+      
+      - name: Trigger validation in curatedMetagenomicDataCuration
+        env:
+          GITHUB_TOKEN: ${{ secrets.DEPENDENT_REPO_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.DEPENDENT_REPO_TOKEN }}" \
+            https://api.github.com/repos/waldronlab/curatedMetagenomicDataCuration/dispatches \
+            -d '{
+              "event_type": "schema-updated",
+              "client_payload": {
+                "schema_repo": "${{ github.repository }}",
+                "schema_commit": "${{ steps.schema.outputs.sha }}",
+                "schema_commit_short": "${{ steps.schema.outputs.short_sha }}",
+                "changed_files": "${{ steps.schema.outputs.changed_files }}",
+                "trigger_url": "${{ github.event.head_commit.url }}"
+              }
+            }'
+      
+      - name: Log notification
+        run: |
+          echo "✅ Notified curatedMetagenomicDataCuration of schema update"
+          echo "Schema commit: ${{ steps.schema.outputs.short_sha }}"
+          echo "Changed files: ${{ steps.schema.outputs.changed_files }}"
