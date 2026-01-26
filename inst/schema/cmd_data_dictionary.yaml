@@ -1,8 +1,161 @@
 schema_info:
   name: curatedMetagenomicData_metadata_schema
-  version: 1.0.0
+  version: 1.0.1
   description: Metadata schema for curatedMetagenomicData package
-  last_updated: '2026-01-24'
+  last_updated: '2026-01-25'
+ancestry:
+  col_name: ancestry
+  col_class: character
+  uniqueness: non-unique
+  required: no
+  multiple_values: no
+  description: Population category defined using ancestry informative markers (AIMs)
+    based on genetic/genomic data (children of HANCESTRO:0004)
+  ontology:
+    roots: HANCESTRO:0004
+    property: children
+ancestry_details:
+  col_name: ancestry_details
+  col_class: character
+  uniqueness: non-unique
+  required: no
+  multiple_values: yes
+  description: Population category defined using ancestry informative markers (AIMs)
+    based on genetic/genomic data (descendants of `ancestry`)
+  validation:
+    delimiter: ;
+  ontology:
+    roots: HANCESTRO:0004
+    property: descendant
+body_site:
+  col_name: body_site
+  col_class: character
+  uniqueness: non-unique
+  required: yes
+  multiple_values: no
+  description: Subject's bodysite the given sample was collected from
+  validation:
+    allowed_values:
+    - feces
+    - oral cavity
+    - skin epidermis
+    - vagina
+    - nasal cavity
+    - milk
+control:
+  col_name: control
+  col_class: character
+  uniqueness: non-unique
+  required: yes
+  multiple_values: no
+  description: Whether the sample is control, case, or not used in the study
+  validation:
+    allowed_values:
+    - Study Control
+    - Case
+    - Not Used
+country:
+  col_name: country
+  col_class: character
+  uniqueness: non-unique
+  required: no
+  multiple_values: no
+  description: Location where subject lives and/or data was collected
+  ontology:
+    roots: NCIT:C25464
+    property: descendant
+curator:
+  col_name: curator
+  col_class: character
+  uniqueness: non-unique
+  required: no
+  multiple_values: yes
+  description: Curator name.
+  validation:
+    delimiter: ;
+median_read_length:
+  col_name: median_read_length
+  col_class: integer
+  uniqueness: non-unique
+  required: yes
+  multiple_values: no
+  description: Median read length - calculated from raw data.
+  validation:
+    pattern: '[0-9]+'
+minimum_read_length:
+  col_name: minimum_read_length
+  col_class: integer
+  uniqueness: non-unique
+  required: yes
+  multiple_values: no
+  description: Minimum read length - calculated from raw data.
+  validation:
+    pattern: '[0-9]+'
+number_bases:
+  col_name: number_bases
+  col_class: double
+  uniqueness: non-unique
+  required: yes
+  multiple_values: no
+  description: Total number of bases sequenced in the sample - calculated from raw
+    data.
+  validation:
+    pattern: '[0-9]+'
+number_reads:
+  col_name: number_reads
+  col_class: integer
+  uniqueness: non-unique
+  required: yes
+  multiple_values: no
+  description: Number of final reads - calculated from raw data.
+  validation:
+    pattern: '[0-9]+'
+Sample Source ID:
+  col_name: Sample Source ID
+  col_class: character
+  uniqueness: unique
+  required: yes
+  multiple_values: no
+  description: Sample identifier.
+  validation:
+    pattern: '[0-9a-zA-Z]\S+'
+sequencing_platform:
+  col_name: sequencing_platform
+  col_class: character
+  uniqueness: non-unique
+  required: yes
+  multiple_values: no
+  description: A scientific instrument used to automate the DNA sequencing process
+  validation:
+    allowed_values:
+    - IlluminaHiSeq
+    - IlluminaMiSeq
+    - IlluminaNextSeq
+    - IlluminaNovaSeq
+    - IonProton
+subject_id:
+  col_name: subject_id
+  col_class: character
+  uniqueness: non-unique
+  required: yes
+  multiple_values: no
+  description: Subject identifier.
+  validation:
+    pattern: '[0-9a-zA-Z]\S+'
+target_condition:
+  col_name: target_condition
+  col_class: character
+  uniqueness: non-unique
+  required: yes
+  multiple_values: yes
+  description: Main phenotype(s)/condition(s) of interest for a given study
+  validation:
+    delimiter: ;
+  ontology:
+    roots:
+    - NCIT:C7057
+    - EFO:0000408
+    property: descendant
 age:
   col_name: age
   col_class: integer
@@ -42,30 +195,6 @@ age_unit:
     - Week
     - Month
     - Year
-ancestry:
-  col_name: ancestry
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Population category defined using ancestry informative markers (AIMs)
-    based on genetic/genomic data (children of HANCESTRO:0004)
-  ontology:
-    roots: HANCESTRO:0004
-    property: children
-ancestry_details:
-  col_name: ancestry_details
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: yes
-  description: Population category defined using ancestry informative markers (AIMs)
-    based on genetic/genomic data (descendants of `ancestry`)
-  validation:
-    delimiter: ;
-  ontology:
-    roots: HANCESTRO:0004
-    property: descendant
 antibiotics_current_use:
   col_name: antibiotics_current_use
   col_class: character
@@ -99,21 +228,6 @@ bmi:
     (m2).'
   validation:
     pattern: '[0-9]+\.?[0-9]*'
-body_site:
-  col_name: body_site
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Subject's bodysite the given sample was collected from
-  validation:
-    allowed_values:
-    - feces
-    - oral cavity
-    - skin epidermis
-    - vagina
-    - nasal cavity
-    - milk
 body_site_details:
   col_name: body_site_details
   col_class: character
@@ -122,37 +236,6 @@ body_site_details:
   multiple_values: no
   description: Subject's body subsite the given sample was collected from.  Should
     be more specific information than bodysite
-control:
-  col_name: control
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Whether the sample is control, case, or not used in the study
-  validation:
-    allowed_values:
-    - Study Control
-    - Case
-    - Not Used
-country:
-  col_name: country
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Location where subject lives and/or data was collected
-  ontology:
-    roots: NCIT:C25464
-    property: descendant
-curator:
-  col_name: curator
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: yes
-  description: Curator name.
-  validation:
-    delimiter: ;
 days_from_first_collection:
   col_name: days_from_first_collection
   col_class: integer
@@ -415,24 +498,6 @@ location:
   description: Free-form additional location information.
   validation:
     allowed_values: .+
-median_read_length:
-  col_name: median_read_length
-  col_class: integer
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Median read length - calculated from raw data.
-  validation:
-    pattern: '[0-9]+'
-minimum_read_length:
-  col_name: minimum_read_length
-  col_class: integer
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Minimum read length - calculated from raw data.
-  validation:
-    pattern: '[0-9]+'
 ncbi_accession:
   col_name: ncbi_accession
   col_class: character
@@ -500,25 +565,6 @@ neonatal_preterm_birth:
     allowed_values:
     - 'Yes'
     - 'No'
-number_bases:
-  col_name: number_bases
-  col_class: double
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Total number of bases sequenced in the sample - calculated from raw
-    data.
-  validation:
-    pattern: '[0-9]+'
-number_reads:
-  col_name: number_reads
-  col_class: integer
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Number of final reads - calculated from raw data.
-  validation:
-    pattern: '[0-9]+'
 obgyn_birth_control:
   col_name: obgyn_birth_control
   col_class: character
@@ -585,29 +631,6 @@ probing_pocket_depth:
     - Lingual surface of tooth
     - Mesial surface of tooth
     delimiter: <;>
-sample_id:
-  col_name: sample_id
-  col_class: character
-  uniqueness: unique
-  required: yes
-  multiple_values: no
-  description: Sample identifier.
-  validation:
-    pattern: '[0-9a-zA-Z]\S+'
-sequencing_platform:
-  col_name: sequencing_platform
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: A scientific instrument used to automate the DNA sequencing process
-  validation:
-    allowed_values:
-    - IlluminaHiSeq
-    - IlluminaMiSeq
-    - IlluminaNextSeq
-    - IlluminaNovaSeq
-    - IonProton
 sex:
   col_name: sex
   col_class: character
@@ -648,29 +671,6 @@ subcohort:
   description: Identifier of a sub-set of the cohort. Can be everything.
   validation:
     pattern: '[0-9a-zA-Z]\S+'
-subject_id:
-  col_name: subject_id
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: no
-  description: Subject identifier.
-  validation:
-    pattern: '[0-9a-zA-Z]\S+'
-target_condition:
-  col_name: target_condition
-  col_class: character
-  uniqueness: non-unique
-  required: yes
-  multiple_values: yes
-  description: Main phenotype(s)/condition(s) of interest for a given study
-  validation:
-    delimiter: ;
-  ontology:
-    roots:
-    - NCIT:C7057
-    - EFO:0000408
-    property: descendant
 treatment:
   col_name: treatment
   col_class: character
