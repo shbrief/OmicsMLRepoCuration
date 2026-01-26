@@ -17,7 +17,7 @@
     
     ## Load ontology
     tryCatch({
-        ontob <- Ontology(onto)
+        ontob <- rols::Ontology(onto)
     }, error = function(e) {
         stop(paste0("Error retrieving ontology: \"", onto, "\""))
     })
@@ -34,7 +34,7 @@
         
         tryCatch({
             ## Get Term object and extract JSON tree link
-            cur_trm <- Term(ontob, terms[i])
+            cur_trm <- rols::Term(ontob, terms[i])
             jstree <- cur_trm@links$jstree$href
             
         }, error = function(e) {
@@ -397,7 +397,7 @@
 
 #' Retrieves ontology terms and database information for given term ids
 #'
-#' @import rols
+#' @importFrom rols OlsSearch olsSearch
 #' @importFrom methods as
 #' 
 #' @param onto A character vector. Name(s) of ontologies that terms are from.
@@ -435,8 +435,8 @@
         curid <- dmat$ontology_term_id[i]
         print(paste0("Retrieving info for picked node ", curid))
         
-        qry <- OlsSearch(q = curid, exact = TRUE)
-        qry <- olsSearch(qry)
+        qry <- rols::OlsSearch(q = curid, exact = TRUE)
+        qry <- rols::olsSearch(qry)
         qdrf <- methods::as(qry, "data.frame")
         
         if (curont %in% qdrf$ontology_prefix) {

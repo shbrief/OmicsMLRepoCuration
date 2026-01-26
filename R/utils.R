@@ -59,8 +59,8 @@ strVsplit <- function(terms, delim) {
 #' 
 is_obsolete <- function(term) {
     onto <- get_ontologies(term)
-    ontob <- Ontology(onto)
-    termob <- Term(ontob, term)
+    ontob <- rols::Ontology(onto)
+    termob <- rols::Term(ontob, term)
     ind <- termob@is_obsolete
     return(ind)
 }
@@ -80,8 +80,8 @@ is_obsolete <- function(term) {
 #'
 get_replacement <- function(term) {
     onto <- get_ontologies(term)
-    ontob <- Ontology(onto)
-    termob <- Term(ontob, term)
+    ontob <- rols::Ontology(onto)
+    termob <- rols::Term(ontob, term)
     repitem <- termob@term_replaced_by
     
     if (length(repitem) > 0) {
