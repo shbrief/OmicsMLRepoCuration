@@ -22,8 +22,7 @@ Description: This package mainly supports metadata harmonization and curation
     the comparable analysis across datasets. 
 License: GPL-3
 Depends: 
-    R (>= 4.2.0),
-    OmicsMLRepoData
+    R (>= 4.2.0)
 Imports:
     rols,
     utils,
