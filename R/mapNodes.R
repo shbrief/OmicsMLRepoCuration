@@ -1,6 +1,6 @@
 #' Extract urls for JSON trees from rols Term object
 #'
-#' @importFrom rols Ontology Term
+#' @importFrom rols olsOntology olsTerm
 #'
 #' @param onto A character vector. Name(s) of ontologies that terms are from.
 #' @param terms A character vector of ontology term IDs.
@@ -17,7 +17,7 @@
     
     ## Load ontology
     tryCatch({
-        ontob <- rols::Ontology(onto)
+        ontob <- rols::olsOntology(onto)
     }, error = function(e) {
         stop(paste0("Error retrieving ontology: \"", onto, "\""))
     })
@@ -34,7 +34,7 @@
         
         tryCatch({
             ## Get Term object and extract JSON tree link
-            cur_trm <- rols::Term(ontob, terms[i])
+            cur_trm <- rols::olsTerm(ontob, terms[i])
             jstree <- cur_trm@links$jstree$href
             
         }, error = function(e) {

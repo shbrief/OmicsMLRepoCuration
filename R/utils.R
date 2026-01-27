@@ -46,7 +46,7 @@ strVsplit <- function(terms, delim) {
 
 #' Indicate if a term is obsolete
 #' 
-#' @importFrom rols Ontology Term
+#' @importFrom rols olsOntology olsTerm
 #' 
 #' @param term Character; ontology term 
 #' 
@@ -59,7 +59,7 @@ strVsplit <- function(terms, delim) {
 #' 
 is_obsolete <- function(term) {
     onto <- get_ontologies(term)
-    ontob <- rols::Ontology(onto)
+    ontob <- rols::olsOntology(onto)
     termob <- rols::Term(ontob, term)
     ind <- termob@is_obsolete
     return(ind)
@@ -67,7 +67,7 @@ is_obsolete <- function(term) {
 
 #' Get replacement for obsolete term
 #' 
-#' @importFrom rols Ontology Term
+#' @importFrom rols olsOntology olsTerm
 #' 
 #' @param term Character; ontology term id
 #' 
@@ -80,8 +80,8 @@ is_obsolete <- function(term) {
 #'
 get_replacement <- function(term) {
     onto <- get_ontologies(term)
-    ontob <- rols::Ontology(onto)
-    termob <- rols::Term(ontob, term)
+    ontob <- rols::olsOntology(onto)
+    termob <- rols::olsTerm(ontob, term)
     repitem <- termob@term_replaced_by
     
     if (length(repitem) > 0) {
