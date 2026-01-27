@@ -1,6 +1,6 @@
-id: https://github.com/waldronlab/curatedMetagenomicData
+id: https://example.org/curatedMetagenomicData
 name: curatedMetagenomicData
-version: 1.0.1
+version: 1.0.2
 description: Metadata schema for curatedMetagenomicData package
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -350,7 +350,7 @@ slots:
     range: obgyn_pregnancy_enum
   pmid:
     description: Identifier of the main publication in PubMed
-    range: string
+    range: integer
     pattern: '[0-9]{8}'
   probing_pocket_depth:
     description: Depth of periodontal pocket measured at the different tooth's regions
@@ -363,6 +363,7 @@ slots:
     description: Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when
       the past smoking behavior information is unavailable.
     range: smoker_enum
+    multivalued: yes
   study_name:
     description: Dataset name.
     range: string

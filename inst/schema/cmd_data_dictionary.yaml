@@ -1,8 +1,8 @@
 schema_info:
   name: curatedMetagenomicData_metadata_schema
-  version: 1.0.1
+  version: 1.0.0
   description: Metadata schema for curatedMetagenomicData package
-  last_updated: '2026-01-25'
+  last_updated: '2026-01-27'
 ancestry:
   col_name: ancestry
   col_class: character
@@ -610,7 +610,7 @@ obgyn_pregnancy:
     - Not Pregnant
 pmid:
   col_name: pmid
-  col_class: character
+  col_class: integer
   uniqueness: non-unique
   required: no
   multiple_values: no
@@ -647,7 +647,7 @@ smoker:
   col_class: character
   uniqueness: non-unique
   required: no
-  multiple_values: no
+  multiple_values: yes
   description: Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when
     the past smoking behavior information is unavailable.
   validation:
