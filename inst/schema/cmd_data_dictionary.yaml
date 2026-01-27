@@ -140,8 +140,6 @@ smoker:
     pattern: smoker (finding)|Non-smoker (finding)|Ex-smoker (finding)|Never smoked
       tobacco (finding)
     delimiter: ;
-  ontology:
-    roots: SNOMED:77176002|SNOMED:8392000|SNOMED:8517006|SNOMED:266919005
 treatment:
   col_name: treatment
   col_class: character

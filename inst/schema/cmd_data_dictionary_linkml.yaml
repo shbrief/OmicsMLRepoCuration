@@ -1,6 +1,6 @@
 id: https://example.org/curatedMetagenomicData
 name: curatedMetagenomicData
-version: 1.0.4
+version: 1.0.5
 description: Metadata schema for curatedMetagenomicData package
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -159,12 +159,8 @@ slots:
   smoker:
     description: Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when
       the past smoking behavior information is unavailable.
-    range: string
+    range: smoker_enum
     multivalued: yes
-    annotations:
-      ontology_roots: SNOMED:77176002|SNOMED:8392000|SNOMED:8517006|SNOMED:266919005
-    comments:
-    - 'Values should be descendants of: SNOMED:77176002|SNOMED:8392000|SNOMED:8517006|SNOMED:266919005'
   treatment:
     description: Medication(s)/treatment(s) applied to the subject
     range: string
