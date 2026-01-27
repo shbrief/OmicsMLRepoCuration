@@ -426,7 +426,7 @@ enums:
       Mesial surface of tooth: ~
   smoker_enum:
     permissible_values:
-      smoker (finding): ~
+      Smoker (finding): ~
       Non-smoker (finding): ~
       Ex-smoker (finding): ~
       Never smoked tobacco (finding): ~

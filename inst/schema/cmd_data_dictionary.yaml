@@ -137,7 +137,7 @@ smoker:
   description: Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when
     the past smoking behavior information is unavailable.
   validation:
-    pattern: smoker (finding)|Non-smoker (finding)|Ex-smoker (finding)|Never smoked
+    pattern: Smoker (finding)|Non-smoker (finding)|Ex-smoker (finding)|Never smoked
       tobacco (finding)
     delimiter: ;
 treatment:
