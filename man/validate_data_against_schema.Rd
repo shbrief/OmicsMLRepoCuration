@@ -33,6 +33,11 @@ The validation checks include:
   \item Required field presence
   \item Data type matching (character, integer, numeric, double)
   \item Pattern validation using regular expressions
+  \item Multiple values with static enums: For fields with multiplevalues=TRUE,
+    a delimiter, and static enum patterns (pipe-separated values), the function
+    splits each cell value by the delimiter and validates each individual value
+    against the allowed enum values. This supports fields like 'feces_phenotype'
+    and 'smoker' that allow multiple selections from a predefined list.
 }
 }
 \examples{

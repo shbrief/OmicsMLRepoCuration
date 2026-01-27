@@ -200,6 +200,11 @@ get_all_categories <- function(schema) {
 #'   \item Required field presence
 #'   \item Data type matching (character, integer, numeric, double)
 #'   \item Pattern validation using regular expressions
+#'   \item Multiple values with static enums: For fields with multiplevalues=TRUE,
+#'     a delimiter, and static enum patterns (pipe-separated values), the function
+#'     splits each cell value by the delimiter and validates each individual value
+#'     against the allowed enum values. This supports fields like 'feces_phenotype'
+#'     and 'smoker' that allow multiple selections from a predefined list.
 #' }
 #'
 #' @examples
@@ -263,8 +268,60 @@ validate_data_against_schema <- function(data, schema) {
         }
       }
       
-      # Pattern validation
-      if (!is.null(field_def$validation$pattern)) {
+      # Validation for fields with multiple values and static enums
+      # Check if field has multiplevalues=TRUE, a delimiter, and pattern (static enum)
+      has_multiple_values <- !is.null(field_def$multiple_values) && field_def$multiple_values
+      has_delimiter <- !is.null(field_def$validation$delimiter)
+      has_pattern <- !is.null(field_def$validation$pattern)
+      
+      if (has_multiple_values && has_delimiter && has_pattern) {
+        # Check if pattern looks like a static enum (contains |)
+        pattern <- field_def$validation$pattern
+        if (grepl("\\|", pattern)) {
+          # This is a static enum - parse allowed values
+          allowed_values <- strsplit(pattern, "\\|")[[1]]
+          allowed_values <- trimws(allowed_values)
+          
+          delimiter <- field_def$validation$delimiter
+          # Handle compound delimiters like <;>
+          # Use fixed=TRUE for literal string matching
+          non_na_values <- data[[col]][!is.na(data[[col]])]
+          if (length(non_na_values) > 0) {
+            for (val_idx in seq_along(non_na_values)) {
+              cell_value <- non_na_values[val_idx]
+              # Split by delimiter to get individual values (using fixed string split)
+              individual_values <- strsplit(cell_value, delimiter, fixed = TRUE)[[1]]
+              individual_values <- trimws(individual_values)
+              individual_values <- individual_values[individual_values != ""]
+              
+              # Check each individual value against allowed values
+              invalid_values <- individual_values[!individual_values %in% allowed_values]
+              if (length(invalid_values) > 0) {
+                validation_results$warnings <- c(
+                  validation_results$warnings,
+                  paste0("Field '", col, "' row ", val_idx, 
+                         " has invalid values: ", paste(invalid_values, collapse = ", "),
+                         ". Allowed values: ", paste(allowed_values, collapse = ", "))
+                )
+              }
+            }
+          }
+        } else {
+          # It's a regex pattern, use standard pattern matching
+          non_na_values <- data[[col]][!is.na(data[[col]])]
+          if (length(non_na_values) > 0) {
+            invalid <- !grepl(pattern, non_na_values)
+            if (any(invalid)) {
+              validation_results$warnings <- c(
+                validation_results$warnings,
+                paste0("Field '", col, "' has ", sum(invalid), 
+                       " values not matching pattern:  ", pattern)
+              )
+            }
+          }
+        }
+      } else if (has_pattern) {
+        # Standard pattern validation (no multiple values or delimiter)
         pattern <- field_def$validation$pattern
         non_na_values <- data[[col]][!is.na(data[[col]])]
         if (length(non_na_values) > 0) {
