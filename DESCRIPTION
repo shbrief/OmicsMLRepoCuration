@@ -1,7 +1,7 @@
 Package: OmicsMLRepoCuration
 Type: Package
 Title: Help metadata curation with ontology
-Version: 0.1.6
+Version: 0.1.7
 Date: 2026-1-27
 Authors@R: 
     c(person(given = "Sehyun",
@@ -22,7 +22,7 @@ Description: This package mainly supports metadata harmonization and curation
     the comparable analysis across datasets. 
 License: GPL-3
 Depends: 
-    R (>= 4.5.2)
+    R (>= 4.5.1)
 Imports:
     rols,
     utils,
