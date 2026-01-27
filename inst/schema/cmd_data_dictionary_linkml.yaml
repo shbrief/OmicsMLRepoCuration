@@ -1,6 +1,6 @@
 id: https://example.org/curatedMetagenomicData
 name: curatedMetagenomicData
-version: 1.0.2
+version: 1.0.3
 description: Metadata schema for curatedMetagenomicData package
 prefixes:
   linkml: https://w3id.org/linkml/
