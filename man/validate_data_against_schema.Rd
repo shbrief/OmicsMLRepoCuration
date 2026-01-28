@@ -38,6 +38,11 @@ The validation checks include:
     splits each cell value by the delimiter and validates each individual value
     against the allowed enum values. This supports fields like 'feces_phenotype'
     and 'smoker' that allow multiple selections from a predefined list.
+  \item Combined field validation: For certain field pairs (e.g., feces_phenotype
+    and feces_phenotype_value), the function validates that both fields have the
+    same number of values when split by delimiter, ensuring proper pairing of
+    phenotype measurements with their corresponding values. The combined format
+    follows the pattern "phenotype1:value1<;>phenotype2:value2".
 }
 }
 \examples{

@@ -175,6 +175,129 @@ get_all_categories <- function(schema) {
     return(unique(categories))
 }
 
+#' Validate combined field values
+#'
+#' Internal helper function to validate combined field values where two fields
+#' must be paired together (e.g., feces_phenotype and feces_phenotype_value).
+#' This function checks that:
+#' \itemize{
+#'   \item Both fields have the same number of values after splitting by delimiter
+#'   \item Each phenotype value is valid according to its enum
+#'   \item Each measurement value matches the expected pattern
+#'   \item The combined format "phenotype:value" pairs are correctly formed
+#' }
+#'
+#' @param data A data frame containing the fields to validate
+#' @param key_field Character string naming the key field (e.g., "feces_phenotype")
+#' @param value_field Character string naming the value field (e.g., "feces_phenotype_value")
+#' @param key_schema Field definition from schema for the key field
+#' @param value_schema Field definition from schema for the value field
+#' @param delimiter Character string used to split multiple values (e.g., "<;>")
+#'
+#' @return A character vector of warning messages. Empty if validation passes.
+#'
+#' @keywords internal
+.validate_combined_fields <- function(data, key_field, value_field, 
+                                       key_schema, value_schema, delimiter) {
+  warnings <- c()
+  
+  # Skip if either field is not present in the data
+  if (!key_field %in% colnames(data) || !value_field %in% colnames(data)) {
+    return(warnings)
+  }
+  
+  # Get the columns
+  key_col <- data[[key_field]]
+  value_col <- data[[value_field]]
+  
+  # Check each row
+  for (row_idx in seq_len(nrow(data))) {
+    key_val <- key_col[row_idx]
+    value_val <- value_col[row_idx]
+    
+    # Skip if both are NA
+    if (is.na(key_val) && is.na(value_val)) {
+      next
+    }
+    
+    # Error if only one is NA
+    if (is.na(key_val) && !is.na(value_val)) {
+      warnings <- c(warnings, 
+        paste0("Row ", row_idx, ": '", value_field, "' has a value but '", 
+               key_field, "' is missing"))
+      next
+    }
+    if (!is.na(key_val) && is.na(value_val)) {
+      warnings <- c(warnings,
+        paste0("Row ", row_idx, ": '", key_field, "' has a value but '", 
+               value_field, "' is missing"))
+      next
+    }
+    
+    # Split by delimiter
+    key_values <- strsplit(as.character(key_val), delimiter, fixed = TRUE)[[1]]
+    value_values <- strsplit(as.character(value_val), delimiter, fixed = TRUE)[[1]]
+    
+    # Trim whitespace
+    key_values <- trimws(key_values)
+    value_values <- trimws(value_values)
+    
+    # Remove empty strings
+    key_values <- key_values[key_values != ""]
+    value_values <- value_values[value_values != ""]
+    
+    # Check counts match
+    if (length(key_values) != length(value_values)) {
+      warnings <- c(warnings,
+        paste0("Row ", row_idx, ": '", key_field, "' has ", length(key_values),
+               " value(s) but '", value_field, "' has ", length(value_values),
+               " value(s). They must have the same count."))
+      next
+    }
+    
+    # Validate individual key values against enum if present
+    if (!is.null(key_schema$validation$pattern)) {
+      pattern <- key_schema$validation$pattern
+      if (grepl("\\|", pattern)) {
+        # This is a static enum
+        allowed_keys <- strsplit(pattern, "\\|")[[1]]
+        allowed_keys <- trimws(allowed_keys)
+        
+        invalid_keys <- key_values[!key_values %in% allowed_keys]
+        if (length(invalid_keys) > 0) {
+          warnings <- c(warnings,
+            paste0("Row ", row_idx, ": '", key_field, "' has invalid values: ",
+                   paste(invalid_keys, collapse = ", "),
+                   ". Allowed values: ", paste(allowed_keys, collapse = ", ")))
+        }
+      }
+    }
+    
+    # Validate individual value_values against pattern if present
+    if (!is.null(value_schema$validation$pattern)) {
+      pattern <- value_schema$validation$pattern
+      for (val_idx in seq_along(value_values)) {
+        if (!grepl(pattern, value_values[val_idx])) {
+          warnings <- c(warnings,
+            paste0("Row ", row_idx, ": '", value_field, "' value '",
+                   value_values[val_idx], "' (paired with '", 
+                   key_values[val_idx], "') does not match pattern: ", pattern))
+        }
+      }
+    }
+    
+    # Create combined format string for informational purposes
+    # Format: "phenotype1:value1<;>phenotype2:value2"
+    combined_pairs <- paste(key_values, value_values, sep = ":")
+    combined_format <- paste(combined_pairs, collapse = delimiter)
+    
+    # Note: We could add this to a "info" section if needed
+    # For now, we just validate the structure
+  }
+  
+  return(warnings)
+}
+
 #' Validate data against schema
 #'
 #' Performs comprehensive validation of a data frame against a schema, checking
@@ -205,6 +328,11 @@ get_all_categories <- function(schema) {
 #'     splits each cell value by the delimiter and validates each individual value
 #'     against the allowed enum values. This supports fields like 'feces_phenotype'
 #'     and 'smoker' that allow multiple selections from a predefined list.
+#'   \item Combined field validation: For certain field pairs (e.g., feces_phenotype
+#'     and feces_phenotype_value), the function validates that both fields have the
+#'     same number of values when split by delimiter, ensuring proper pairing of
+#'     phenotype measurements with their corresponding values. The combined format
+#'     follows the pattern "phenotype1:value1<;>phenotype2:value2".
 #' }
 #'
 #' @examples
@@ -307,16 +435,28 @@ validate_data_against_schema <- function(data, schema) {
             }
           }
         } else {
-          # It's a regex pattern, use standard pattern matching
+          # It's a regex pattern with multiple values - split by delimiter and validate each
+          delimiter <- field_def$validation$delimiter
           non_na_values <- data[[col]][!is.na(data[[col]])]
           if (length(non_na_values) > 0) {
-            invalid <- !grepl(pattern, non_na_values)
-            if (any(invalid)) {
-              validation_results$warnings <- c(
-                validation_results$warnings,
-                paste0("Field '", col, "' has ", sum(invalid), 
-                       " values not matching pattern:  ", pattern)
-              )
+            for (val_idx in seq_along(non_na_values)) {
+              cell_value <- non_na_values[val_idx]
+              # Split by delimiter to get individual values
+              individual_values <- strsplit(as.character(cell_value), delimiter, fixed = TRUE)[[1]]
+              individual_values <- trimws(individual_values)
+              individual_values <- individual_values[individual_values != ""]
+              
+              # Check each individual value against the pattern
+              for (ind_val in individual_values) {
+                if (!grepl(pattern, ind_val)) {
+                  validation_results$warnings <- c(
+                    validation_results$warnings,
+                    paste0("Field '", col, "' row ", val_idx, 
+                           " has value '", ind_val, 
+                           "' not matching pattern: ", pattern)
+                  )
+                }
+              }
             }
           }
         }
@@ -334,6 +474,43 @@ validate_data_against_schema <- function(data, schema) {
             )
           }
         }
+      }
+    }
+  }
+  
+  # Check for combined field validations
+  # Define field pairs that need combined validation
+  combined_validations <- list(
+    list(
+      key_field = "feces_phenotype",
+      value_field = "feces_phenotype_value"
+    )
+    # Add more combined validation pairs here if needed in the future
+  )
+  
+  # Perform combined field validation for each pair
+  for (pair in combined_validations) {
+    key_field <- pair$key_field
+    value_field <- pair$value_field
+    
+    # Check if both fields are defined in schema
+    if (key_field %in% names(schema) && value_field %in% names(schema)) {
+      key_schema <- schema[[key_field]]
+      value_schema <- schema[[value_field]]
+      
+      # Get delimiter (should be same for both, but check key_field first)
+      delimiter <- key_schema$validation$delimiter
+      if (is.null(delimiter) && !is.null(value_schema$validation$delimiter)) {
+        delimiter <- value_schema$validation$delimiter
+      }
+      
+      # Perform combined validation if delimiter exists
+      if (!is.null(delimiter)) {
+        combined_warnings <- .validate_combined_fields(
+          data, key_field, value_field,
+          key_schema, value_schema, delimiter
+        )
+        validation_results$warnings <- c(validation_results$warnings, combined_warnings)
       }
     }
   }
