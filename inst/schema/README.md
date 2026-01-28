@@ -171,8 +171,51 @@ print(f'  Enums: {len(schema.all_enums())}')
 schema <- load_metadata_schema("inst/schema/cmd_schema.yaml")
 
 # Validate data
-validate_data_against_schema(your_data, schema)
+result <- validate_data_against_schema(your_data, schema)
+
+# Check results
+if (!result$valid) {
+  cat("Errors:\n")
+  for (err in result$errors) cat("  -", err, "\n")
+}
+if (length(result$warnings) > 0) {
+  cat("Warnings:\n")
+  for (warn in result$warnings) cat("  -", warn, "\n")
+}
 ```
+
+### Combined Field Validation
+
+The schema supports combined field validation for paired fields that must be validated together. For example, `feces_phenotype` and `feces_phenotype_value` are validated as pairs:
+
+```r
+# Valid paired data
+data <- data.frame(
+  feces_phenotype = "Bristol stool form score (observable entity)<;>Calprotectin Measurement",
+  feces_phenotype_value = "3<;>150.5",
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(data, schema)
+# This will pass validation
+
+# Invalid paired data - count mismatch
+data_invalid <- data.frame(
+  feces_phenotype = "Bristol stool form score (observable entity)<;>Calprotectin Measurement",
+  feces_phenotype_value = "3",  # Only 1 value for 2 phenotypes
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(data_invalid, schema)
+# This will show warning about count mismatch
+```
+
+**Combined validation checks:**
+- Both fields must have equal number of values when split by delimiter
+- Each phenotype value must be from the allowed enum
+- Each measurement value must match the expected pattern
+- If one field has a value, the other must also have a value
+- Combined format: `phenotype1:value1<;>phenotype2:value2`
 
 ---
 

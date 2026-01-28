@@ -1,6 +1,6 @@
 id: https://example.org/curatedMetagenomicData
 name: curatedMetagenomicData
-version: 1.0.5
+version: 1.0.7
 description: Metadata schema for curatedMetagenomicData package
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -17,72 +17,167 @@ classes:
   MetadataRecord:
     description: Main data class for curatedMetagenomicData
     slots:
-    - ancestry_details
     - curator
-    - target_condition
+    - family
+    - fmt_id
+    - location
+    - uncurated_metadata
+    - antibiotics_current_use
+    - disease_response_orr
+    - disease_response_pfs
+    - neonatal_preterm_birth
+    - obgyn_birth_control
+    - obgyn_lactating
+    - westernized
+    - dietary_restriction
+    - dna_extraction_kit
+    - family_role
+    - fmt_role
+    - lifestyle
+    - neonatal_feeding_method
+    - sequencing_platform
+    - zigosity
+    - ancestry
+    - ancestry_details
     - biomarker
+    - body_site_details
+    - country
     - disease
     - disease_details
-    - feces_phenotype
-    - fmt_id
     - hla
-    - probing_pocket_depth
-    - smoker
+    - obgyn_menopause
+    - target_condition
     - treatment
-    - uncurated_metadata
-    - ancestry
-    - body_site
-    - control
-    - country
+    - age
+    - days_from_first_collection
+    - disease_response_pfs_month
     - median_read_length
     - minimum_read_length
     - number_bases
     - number_reads
-    - Sample Source ID
-    - sequencing_platform
-    - subject_id
-    - age
-    - age_group
-    - age_unit
-    - antibiotics_current_use
-    - bmi
-    - body_site_details
-    - days_from_first_collection
-    - dietary_restriction
-    - disease_response_orr
-    - disease_response_os
-    - disease_response_os_unit
-    - disease_response_pfs
-    - disease_response_pfs_month
-    - disease_response_recist
-    - dna_extraction_kit
-    - ecog_performance_status
-    - family
-    - family_role
-    - fmt_role
-    - lifestyle
-    - location
-    - ncbi_accession
-    - neonatal_birth_weight
-    - neonatal_delivery_procedure
-    - neonatal_feeding_method
-    - neonatal_gestational_age
-    - neonatal_preterm_birth
-    - obgyn_birth_control
-    - obgyn_lactating
-    - obgyn_menopause
-    - obgyn_pregnancy
     - pmid
-    - sex
-    - study_name
-    - subcohort
+    - disease_response_os
+    - feces_phenotype_value
+    - neonatal_birth_weight
+    - neonatal_gestational_age
     - tumor_size_measurement
     - tumor_size_residual_measurement
-    - tumor_staging_ajcc
+    - bmi
+    - ncbi_accession
+    - Sample Source ID
+    - study_name
+    - subcohort
+    - subject_id
     - tumor_staging_tnm
-    - westernized
-    - zigosity
+    - age_group
+    - age_unit
+    - body_site
+    - control
+    - disease_response_os_unit
+    - disease_response_recist
+    - ecog_performance_status
+    - feces_phenotype
+    - neonatal_delivery_procedure
+    - obgyn_pregnancy
+    - probing_pocket_depth
+    - sex
+    - smoker
+    - tumor_staging_ajcc
 slots:
+  curator:
+    description: Curator name.
+    range: string
+    multivalued: yes
+  family:
+    description: A number identifying the family subjects belong; not corrected for
+      meta-analyses.
+    range: string
+    pattern: .+
+  fmt_id:
+    description: The id assigned to the FMT (Fecal microbiota transplantation) participants
+      in the study
+    range: string
+    multivalued: yes
+    pattern: .+
+  location:
+    description: Free-form additional location information.
+    range: string
+    pattern: .+
+  uncurated_metadata:
+    description: Additional information that doesn't belong to the existing fields
+    range: string
+    multivalued: yes
+    pattern: .+
+  antibiotics_current_use:
+    description: Antibiotics current usage.  `Yes` for currently using and `No` for
+      not using
+    range: antibiotics_current_use_enum
+  disease_response_orr:
+    description: 'Overal Response (ORR, NCIT:C96613): An assessment of the overall
+      response of the disease to the therapy'
+    range: disease_response_orr_enum
+  disease_response_pfs:
+    description: 'Progression Free Survival (PFS, EFO:0004920): Progression free survival
+      is a measurement from a defined time point e.g. diagnosis and indicates that
+      the disease did not progress i.e. tumours did not increase in size and new incidences
+      did not occur. PFS is usually used in analyzing results of treatment for advanced
+      disease.'
+    range: disease_response_pfs_enum
+  neonatal_preterm_birth:
+    description: Birth when a fetus is less than 37 weeks and 0 days gestational age
+      (NCIT:C92861).
+    range: neonatal_preterm_birth_enum
+  obgyn_birth_control:
+    description: Use of birth control pill (Oral Contraceptive)
+    range: obgyn_birth_control_enum
+  obgyn_lactating:
+    description: An indication that the subject is currently producing milk. (NCIT:C82463)
+    range: obgyn_lactating_enum
+  westernized:
+    description: Subject adopt or be influenced by the cultural, economic, or political
+      systems of Europe and North America.
+    range: westernized_enum
+  dietary_restriction:
+    description: Dietary regime (partial match to SNOMED:182922004 or SNOMED:162536008)
+    range: dietary_restriction_enum
+  dna_extraction_kit:
+    description: Name of the DNA extraction kit
+    range: dna_extraction_kit_enum
+  family_role:
+    description: Role in the family when multiple samples come from the same family
+      but different persons.
+    range: family_role_enum
+  fmt_role:
+    description: The role of the FMT (Fecal microbiota transplantation) participants.  For
+      recipient's samples, timing information (i.e., before or after FMT) is included
+      as well.
+    range: fmt_role_enum
+  lifestyle:
+    description: to describe the lifestyle of non-westernized people
+    range: lifestyle_enum
+  neonatal_feeding_method:
+    description: Infant feeding methods. 'Breastfeeding' refers feeding milk from
+      human (include non-mother's and through bottle), 'Mixed_feeding' refers both
+      breastfeeding and formula feeding, 'Exclusively Breastfeeding;Mixed Feeding'
+      referes the cases where any breastfeeding was done but formula feeding information
+      is unavailable.
+    range: string
+  sequencing_platform:
+    description: A scientific instrument used to automate the DNA sequencing process
+    range: sequencing_platform_enum
+    required: yes
+  zigosity:
+    description: Zigosity.
+    range: zigosity_enum
+  ancestry:
+    description: Population category defined using ancestry informative markers (AIMs)
+      based on genetic/genomic data (children of HANCESTRO:0004)
+    range: string
+    annotations:
+      ontology_roots: HANCESTRO:0004
+      ontology_property: children
+    comments:
+    - 'Values should be descendants of: HANCESTRO:0004'
   ancestry_details:
     description: Population category defined using ancestry informative markers (AIMs)
       based on genetic/genomic data (descendants of `ancestry`)
@@ -93,25 +188,23 @@ slots:
       ontology_property: descendant
     comments:
     - 'Values should be descendants of: HANCESTRO:0004'
-  curator:
-    description: Curator name.
-    range: string
-    multivalued: yes
-  target_condition:
-    description: Main phenotype(s)/condition(s) of interest for a given study
-    range: string
-    required: yes
-    multivalued: yes
-    annotations:
-      ontology_roots: NCIT:C7057, EFO:0000408
-      ontology_property: descendant
-    comments:
-    - 'Values should be descendants of: NCIT:C7057, EFO:0000408'
   biomarker:
     description: A measurable and quantifiable characteristic or substance that serves
       as an indicator of a biological state, condition, or process within an organism.
     range: string
     multivalued: yes
+  body_site_details:
+    description: Subject's body subsite the given sample was collected from.  Should
+      be more specific information than bodysite
+    range: string
+  country:
+    description: Location where subject lives and/or data was collected
+    range: string
+    annotations:
+      ontology_roots: NCIT:C25464
+      ontology_property: descendant
+    comments:
+    - 'Values should be descendants of: NCIT:C25464'
   disease:
     description: Reported disease/condition type(s) for a participant.  'Healthy'
       if disease(s)/condition(s) assessed under a given study is not detected
@@ -132,17 +225,6 @@ slots:
       ontology_property: descendant
     comments:
     - 'Values should be descendants of: NCIT:C7057, EFO:0000408'
-  feces_phenotype:
-    description: Measurements collected from stool sample, including observation,
-      chemical test, and diagnostic procedure
-    range: feces_phenotype_enum
-    multivalued: yes
-  fmt_id:
-    description: The id assigned to the FMT (Fecal microbiota transplantation) participants
-      in the study
-    range: string
-    multivalued: yes
-    pattern: .+
   hla:
     description: Human leukocyte antigen (HLA) typing information
     range: string
@@ -152,15 +234,24 @@ slots:
       ontology_property: descendant
     comments:
     - 'Values should be descendants of: MRO:0001676'
-  probing_pocket_depth:
-    description: Depth of periodontal pocket measured at the different tooth's regions
-    range: probing_pocket_depth_enum
+  obgyn_menopause:
+    description: An indicator as to whether the female subject is in menopause
+    range: string
+    annotations:
+      ontology_roots: NCIT:C106541
+      ontology_property: descendant
+    comments:
+    - 'Values should be descendants of: NCIT:C106541'
+  target_condition:
+    description: Main phenotype(s)/condition(s) of interest for a given study
+    range: string
+    required: yes
     multivalued: yes
-  smoker:
-    description: Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when
-      the past smoking behavior information is unavailable.
-    range: smoker_enum
-    multivalued: yes
+    annotations:
+      ontology_roots: NCIT:C7057, EFO:0000408
+      ontology_property: descendant
+    comments:
+    - 'Values should be descendants of: NCIT:C7057, EFO:0000408'
   treatment:
     description: Medication(s)/treatment(s) applied to the subject
     range: string
@@ -170,36 +261,18 @@ slots:
       ontology_property: descendant
     comments:
     - 'Values should be descendants of: NCIT:C1908'
-  uncurated_metadata:
-    description: Additional information that doesn't belong to the existing fields
-    range: string
-    multivalued: yes
-    pattern: .+
-  ancestry:
-    description: Population category defined using ancestry informative markers (AIMs)
-      based on genetic/genomic data (children of HANCESTRO:0004)
-    range: string
-    annotations:
-      ontology_roots: HANCESTRO:0004
-      ontology_property: children
-    comments:
-    - 'Values should be descendants of: HANCESTRO:0004'
-  body_site:
-    description: Subject's bodysite the given sample was collected from
-    range: body_site_enum
-    required: yes
-  control:
-    description: Whether the sample is control, case, or not used in the study
-    range: control_enum
-    required: yes
-  country:
-    description: Location where subject lives and/or data was collected
-    range: string
-    annotations:
-      ontology_roots: NCIT:C25464
-      ontology_property: descendant
-    comments:
-    - 'Values should be descendants of: NCIT:C25464'
+  age:
+    description: Age of the subject using the unit specified under 'age_unit' column
+    range: integer
+    pattern: '[0-9]+'
+  days_from_first_collection:
+    description: Used for time series studies.
+    range: integer
+    pattern: '[0-9]+'
+  disease_response_pfs_month:
+    description: A time point used to observe PFS. Unit is 'month'
+    range: integer
+    pattern: '[0-9]+'
   median_read_length:
     description: Median read length - calculated from raw data.
     range: integer
@@ -221,171 +294,29 @@ slots:
     range: integer
     required: yes
     pattern: '[0-9]+'
-  Sample Source ID:
-    description: Sample identifier.
-    range: string
-    required: yes
-    identifier: yes
-    pattern: '[0-9a-zA-Z]\S+'
-  sequencing_platform:
-    description: A scientific instrument used to automate the DNA sequencing process
-    range: sequencing_platform_enum
-    required: yes
-  subject_id:
-    description: Subject identifier.
-    range: string
-    required: yes
-    pattern: '[0-9a-zA-Z]\S+'
-  age:
-    description: Age of the subject using the unit specified under 'age_unit' column
+  pmid:
+    description: Identifier of the main publication in PubMed
     range: integer
-    pattern: '[0-9]+'
-  age_group:
-    description: 'Age group classification: Newborn (< 1 month/28 days), Infant (>=
-      1 month & < 2 yrs), Child (>= 2 yrs & < 11 yrs), Adolescent (>= 11 yrs & < 18
-      yrs), Adult (>= 18 yrs & < 65 yrs), Elderly (>= 65 yrs)'
-    range: age_group_enum
-  age_unit:
-    description: Unit of the subject's age specified under 'age' column
-    range: age_unit_enum
-  antibiotics_current_use:
-    description: Antibiotics current usage.  `Yes` for currently using and `No` for
-      not using
-    range: antibiotics_current_use_enum
-  bmi:
-    description: 'body mass index (EFO:0004340): An indicator of body density as determined
-      by the relationship of BODY WEIGHT to BODY HEIGHT.  BMI=weight (kg)/height squared
-      (m2).'
-    range: float
-    pattern: '[0-9]+\.?[0-9]*'
-  body_site_details:
-    description: Subject's body subsite the given sample was collected from.  Should
-      be more specific information than bodysite
-    range: string
-  days_from_first_collection:
-    description: Used for time series studies.
-    range: integer
-    pattern: '[0-9]+'
-  dietary_restriction:
-    description: Dietary regime (partial match to SNOMED:182922004 or SNOMED:162536008)
-    range: dietary_restriction_enum
-  disease_response_orr:
-    description: 'Overal Response (ORR, NCIT:C96613): An assessment of the overall
-      response of the disease to the therapy'
-    range: disease_response_orr_enum
+    pattern: '[0-9]{8}'
   disease_response_os:
     description: A measure of the time until death from any cause. (NCIT:C125201)
     range: float
     pattern: ^[1-9]\d*(\.\d+)?$
-  disease_response_os_unit:
-    description: A time point used to observe overall survival (OS).
-    range: disease_response_os_unit_enum
-  disease_response_pfs:
-    description: 'Progression Free Survival (PFS, EFO:0004920): Progression free survival
-      is a measurement from a defined time point e.g. diagnosis and indicates that
-      the disease did not progress i.e. tumours did not increase in size and new incidences
-      did not occur. PFS is usually used in analyzing results of treatment for advanced
-      disease.'
-    range: disease_response_pfs_enum
-  disease_response_pfs_month:
-    description: A time point used to observe PFS. Unit is 'month'
-    range: integer
-    pattern: '[0-9]+'
-  disease_response_recist:
-    description: 'Response Evaluation Criteria in Solid Tumors (RECIST, DICOM:112022):
-      Standard parameters to be used when documenting response of solid tumors to
-      treatment; a set of published rules that define when cancer patients improve
-      (`respond`), stay the same (`stable`), or worsen (`progression`) during treatments.
-      (from www.recist.com)'
-    range: disease_response_recist_enum
-  dna_extraction_kit:
-    description: Name of the DNA extraction kit
-    range: dna_extraction_kit_enum
-  ecog_performance_status:
-    description: A performance status scale designed to assess disease progression
-      and its affect on the daily living abilities of the patient.  (NCIT:C105721)
-    range: ecog_performance_status_enum
-  family:
-    description: A number identifying the family subjects belong; not corrected for
-      meta-analyses.
+  feces_phenotype_value:
+    description: Value for feces_phenotype
     range: string
-    pattern: .+
-  family_role:
-    description: Role in the family when multiple samples come from the same family
-      but different persons.
-    range: family_role_enum
-  fmt_role:
-    description: The role of the FMT (Fecal microbiota transplantation) participants.  For
-      recipient's samples, timing information (i.e., before or after FMT) is included
-      as well.
-    range: fmt_role_enum
-  lifestyle:
-    description: to describe the lifestyle of non-westernized people
-    range: lifestyle_enum
-  location:
-    description: Free-form additional location information.
-    range: string
-    pattern: .+
-  ncbi_accession:
-    description: A semicolon-separated vector of NCBI accessions
-    range: string
-    pattern: '[ES]R[SR][0-9]+'
+    multivalued: yes
+    pattern: ^[1-9]\d*(\.\d+)?$
   neonatal_birth_weight:
     description: The mass or quantity of heaviness of an individual at BIRTH. (EFO:0004344)
       Unit is in gram.
     range: float
     pattern: ^[1-9]\d*(\.\d+)?$
-  neonatal_delivery_procedure:
-    description: Description of the method by which a fetus is delivered. (NCIT:C81179)
-    range: neonatal_delivery_procedure_enum
-  neonatal_feeding_method:
-    description: Infant feeding methods. 'Breastfeeding' refers feeding milk from
-      human (include non-mother's and through bottle), 'Mixed_feeding' refers both
-      breastfeeding and formula feeding, 'Exclusively Breastfeeding;Mixed Feeding'
-      referes the cases where any breastfeeding was done but formula feeding information
-      is unavailable.
-    range: string
   neonatal_gestational_age:
     description: The age of the conceptus, beginning from the time of FERTILIZATION.
       (EFO:0005112) Unit in weeks.
     range: float
     pattern: ^[1-9]\d*(\.\d+)?$
-  neonatal_preterm_birth:
-    description: Birth when a fetus is less than 37 weeks and 0 days gestational age
-      (NCIT:C92861).
-    range: neonatal_preterm_birth_enum
-  obgyn_birth_control:
-    description: Use of birth control pill (Oral Contraceptive)
-    range: obgyn_birth_control_enum
-  obgyn_lactating:
-    description: An indication that the subject is currently producing milk. (NCIT:C82463)
-    range: obgyn_lactating_enum
-  obgyn_menopause:
-    description: An indicator as to whether the female subject is in menopause
-    range: string
-    annotations:
-      ontology_roots: NCIT:C106541
-      ontology_property: descendant
-    comments:
-    - 'Values should be descendants of: NCIT:C106541'
-  obgyn_pregnancy:
-    description: The pregnancy status of an individual.
-    range: obgyn_pregnancy_enum
-  pmid:
-    description: Identifier of the main publication in PubMed
-    range: integer
-    pattern: '[0-9]{8}'
-  sex:
-    description: Biological sex of the subject
-    range: sex_enum
-  study_name:
-    description: Dataset name.
-    range: string
-    pattern: '[a-zA-Z-]+_[0-9]{4}|[a-zA-Z-]+_[0-9]{4}[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z0-9]+'
-  subcohort:
-    description: Identifier of a sub-set of the cohort. Can be everything.
-    range: string
-    pattern: '[0-9a-zA-Z]\S+'
   tumor_size_measurement:
     description: The measurement of the size of a tumor mass either clinically or
       in a surgically resected specimen.  (NCIT:C106303)
@@ -395,76 +326,124 @@ slots:
     description: A procedure that measures the size of a residual tumor mass.  (NCIT:C198194)
     range: string
     pattern: ^[1-9]\d*(\.\d+)?$
-  tumor_staging_ajcc:
-    description: American Joint Committee on Cancer (tumor staging) (SNOMED:258236004).
-      A system to describe the amount and spread of cancer in a patient's body
-    range: tumor_staging_ajcc_enum
+  bmi:
+    description: 'body mass index (EFO:0004340): An indicator of body density as determined
+      by the relationship of BODY WEIGHT to BODY HEIGHT.  BMI=weight (kg)/height squared
+      (m2).'
+    range: float
+    pattern: '[0-9]+\.?[0-9]*'
+  ncbi_accession:
+    description: A semicolon-separated vector of NCBI accessions
+    range: string
+    pattern: '[ES]R[SR][0-9]+'
+  Sample Source ID:
+    description: Sample identifier.
+    range: string
+    required: yes
+    identifier: yes
+    pattern: '[0-9a-zA-Z]\S+'
+  study_name:
+    description: Dataset name.
+    range: string
+    pattern: '[a-zA-Z-]+_[0-9]{4}|[a-zA-Z-]+_[0-9]{4}[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z0-9]+'
+  subcohort:
+    description: Identifier of a sub-set of the cohort. Can be everything.
+    range: string
+    pattern: '[0-9a-zA-Z]\S+'
+  subject_id:
+    description: Subject identifier.
+    range: string
+    required: yes
+    pattern: '[0-9a-zA-Z]\S+'
   tumor_staging_tnm:
     description: Tumor-node-metastasis (TNM) tumor staging system (tumor staging)
       (SNOMED:254293002).A system to describe the amount and spread of cancer in a
       patient's body
     range: string
     pattern: t[x1-4]n[x0-3]m[x0-1]|pTis|Tis
-  westernized:
-    description: Subject adopt or be influenced by the cultural, economic, or political
-      systems of Europe and North America.
-    range: westernized_enum
-  zigosity:
-    description: Zigosity.
-    range: zigosity_enum
+  age_group:
+    description: 'Age group classification: Newborn (< 1 month/28 days), Infant (>=
+      1 month & < 2 yrs), Child (>= 2 yrs & < 11 yrs), Adolescent (>= 11 yrs & < 18
+      yrs), Adult (>= 18 yrs & < 65 yrs), Elderly (>= 65 yrs)'
+    range: age_group_enum
+  age_unit:
+    description: Unit of the subject's age specified under 'age' column
+    range: age_unit_enum
+  body_site:
+    description: Subject's bodysite the given sample was collected from
+    range: body_site_enum
+    required: yes
+  control:
+    description: Whether the sample is control, case, or not used in the study
+    range: control_enum
+    required: yes
+  disease_response_os_unit:
+    description: A time point used to observe overall survival (OS).
+    range: disease_response_os_unit_enum
+  disease_response_recist:
+    description: 'Response Evaluation Criteria in Solid Tumors (RECIST, DICOM:112022):
+      Standard parameters to be used when documenting response of solid tumors to
+      treatment; a set of published rules that define when cancer patients improve
+      (`respond`), stay the same (`stable`), or worsen (`progression`) during treatments.
+      (from www.recist.com)'
+    range: disease_response_recist_enum
+  ecog_performance_status:
+    description: A performance status scale designed to assess disease progression
+      and its affect on the daily living abilities of the patient.  (NCIT:C105721)
+    range: ecog_performance_status_enum
+  feces_phenotype:
+    description: Measurements collected from stool sample, including observation,
+      chemical test, and diagnostic procedure
+    range: feces_phenotype_enum
+    multivalued: yes
+  neonatal_delivery_procedure:
+    description: Description of the method by which a fetus is delivered. (NCIT:C81179)
+    range: neonatal_delivery_procedure_enum
+  obgyn_pregnancy:
+    description: The pregnancy status of an individual.
+    range: obgyn_pregnancy_enum
+  probing_pocket_depth:
+    description: Depth of periodontal pocket measured at the different tooth's regions
+    range: probing_pocket_depth_enum
+    multivalued: yes
+  sex:
+    description: Biological sex of the subject
+    range: sex_enum
+  smoker:
+    description: Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when
+      the past smoking behavior information is unavailable.
+    range: smoker_enum
+    multivalued: yes
+  tumor_staging_ajcc:
+    description: American Joint Committee on Cancer (tumor staging) (SNOMED:258236004).
+      A system to describe the amount and spread of cancer in a patient's body
+    range: tumor_staging_ajcc_enum
 enums:
-  feces_phenotype_enum:
-    permissible_values:
-      Bristol stool form score (observable entity): ~
-      Calprotectin Measurement: ~
-      Harvey-Bradshaw Index Clinical Classification: ~
-  probing_pocket_depth_enum:
-    permissible_values:
-      Buccal surface: ~
-      Distal surface of tooth: ~
-      Lingual surface of tooth: ~
-      Mesial surface of tooth: ~
-  smoker_enum:
-    permissible_values:
-      Smoker (finding): ~
-      Non-smoker (finding): ~
-      Ex-smoker (finding): ~
-      Never smoked tobacco (finding): ~
-  body_site_enum:
-    permissible_values:
-      feces: ~
-      oral cavity: ~
-      skin epidermis: ~
-      vagina: ~
-      nasal cavity: ~
-      milk: ~
-  control_enum:
-    permissible_values:
-      Study Control: ~
-      Case: ~
-      Not Used: ~
-  sequencing_platform_enum:
-    permissible_values:
-      IlluminaHiSeq: ~
-      IlluminaMiSeq: ~
-      IlluminaNextSeq: ~
-      IlluminaNovaSeq: ~
-      IonProton: ~
-  age_group_enum:
-    permissible_values:
-      Newborn: ~
-      Infant: ~
-      Child: ~
-      Adolescent: ~
-      Adult: ~
-      Elderly: ~
-  age_unit_enum:
-    permissible_values:
-      Day: ~
-      Week: ~
-      Month: ~
-      Year: ~
   antibiotics_current_use_enum:
+    permissible_values:
+      'Yes': ~
+      'No': ~
+  disease_response_orr_enum:
+    permissible_values:
+      'Yes': ~
+      'No': ~
+  disease_response_pfs_enum:
+    permissible_values:
+      'Yes': ~
+      'No': ~
+  neonatal_preterm_birth_enum:
+    permissible_values:
+      'Yes': ~
+      'No': ~
+  obgyn_birth_control_enum:
+    permissible_values:
+      'Yes': ~
+      'No': ~
+  obgyn_lactating_enum:
+    permissible_values:
+      'Yes': ~
+      'No': ~
+  westernized_enum:
     permissible_values:
       'Yes': ~
       'No': ~
@@ -475,26 +454,6 @@ enums:
       high_gluten_diet: ~
       vegetarian: ~
       vegan: ~
-  disease_response_orr_enum:
-    permissible_values:
-      'Yes': ~
-      'No': ~
-  disease_response_os_unit_enum:
-    permissible_values:
-      Day: ~
-      Week: ~
-      Month: ~
-      Year: ~
-  disease_response_pfs_enum:
-    permissible_values:
-      'Yes': ~
-      'No': ~
-  disease_response_recist_enum:
-    permissible_values:
-      RECIST Complete Response: ~
-      RECIST Partial Response: ~
-      RECIST Progressive Disease: ~
-      RECIST Stable Disease: ~
   dna_extraction_kit_enum:
     permissible_values:
       Qiagen: ~
@@ -514,15 +473,6 @@ enums:
       KAMA_Hyper_Prep: ~
       thermo_fisher: ~
       QIAamp: ~
-  ecog_performance_status_enum:
-    permissible_values:
-      ECOG Performance Status 0: ~
-      ECOG Performance Status 1: ~
-      ECOG Performance Status 2: ~
-      ECOG Performance Status 2 or Higher: ~
-      ECOG Performance Status 3: ~
-      ECOG Performance Status 4: ~
-      ECOG Performance Status 5: ~
   family_role_enum:
     permissible_values:
       child: ~
@@ -540,32 +490,96 @@ enums:
       Agropastoralist: ~
       Pastoralist: ~
       Fisher: ~
+  sequencing_platform_enum:
+    permissible_values:
+      IlluminaHiSeq: ~
+      IlluminaMiSeq: ~
+      IlluminaNextSeq: ~
+      IlluminaNovaSeq: ~
+      IonProton: ~
+  zigosity_enum:
+    permissible_values:
+      monozygotic: ~
+      dizygotic: ~
+  age_group_enum:
+    permissible_values:
+      Newborn: ~
+      Infant: ~
+      Child: ~
+      Adolescent: ~
+      Adult: ~
+      Elderly: ~
+  age_unit_enum:
+    permissible_values:
+      Day: ~
+      Week: ~
+      Month: ~
+      Year: ~
+  body_site_enum:
+    permissible_values:
+      feces: ~
+      oral cavity: ~
+      skin epidermis: ~
+      vagina: ~
+      nasal cavity: ~
+      milk: ~
+  control_enum:
+    permissible_values:
+      Study Control: ~
+      Case: ~
+      Not Used: ~
+  disease_response_os_unit_enum:
+    permissible_values:
+      Day: ~
+      Week: ~
+      Month: ~
+      Year: ~
+  disease_response_recist_enum:
+    permissible_values:
+      RECIST Complete Response: ~
+      RECIST Partial Response: ~
+      RECIST Progressive Disease: ~
+      RECIST Stable Disease: ~
+  ecog_performance_status_enum:
+    permissible_values:
+      ECOG Performance Status 0: ~
+      ECOG Performance Status 1: ~
+      ECOG Performance Status 2: ~
+      ECOG Performance Status 2 or Higher: ~
+      ECOG Performance Status 3: ~
+      ECOG Performance Status 4: ~
+      ECOG Performance Status 5: ~
+  feces_phenotype_enum:
+    permissible_values:
+      Bristol stool form score (observable entity): ~
+      Calprotectin Measurement: ~
+      Harvey-Bradshaw Index Clinical Classification: ~
   neonatal_delivery_procedure_enum:
     permissible_values:
       Elective Cesarean Delivery: ~
       Emergency Cesarean Delivery: ~
       Cesarean Section: ~
       Vaginal Delivery: ~
-  neonatal_preterm_birth_enum:
-    permissible_values:
-      'Yes': ~
-      'No': ~
-  obgyn_birth_control_enum:
-    permissible_values:
-      'Yes': ~
-      'No': ~
-  obgyn_lactating_enum:
-    permissible_values:
-      'Yes': ~
-      'No': ~
   obgyn_pregnancy_enum:
     permissible_values:
       Pregnant: ~
       Not Pregnant: ~
+  probing_pocket_depth_enum:
+    permissible_values:
+      Buccal surface: ~
+      Distal surface of tooth: ~
+      Lingual surface of tooth: ~
+      Mesial surface of tooth: ~
   sex_enum:
     permissible_values:
       Female: ~
       Male: ~
+  smoker_enum:
+    permissible_values:
+      Smoker (finding): ~
+      Non-smoker (finding): ~
+      Ex-smoker (finding): ~
+      Never smoked tobacco (finding): ~
   tumor_staging_ajcc_enum:
     permissible_values:
       '0': ~
@@ -574,11 +588,3 @@ enums:
       III: ~
       IV: ~
       III/IV: ~
-  westernized_enum:
-    permissible_values:
-      'Yes': ~
-      'No': ~
-  zigosity_enum:
-    permissible_values:
-      monozygotic: ~
-      dizygotic: ~
