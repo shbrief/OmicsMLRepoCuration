@@ -953,6 +953,7 @@ table_to_linkml_schema <- function(schema_table,
     id = schema_id,
     name = schema_name,
     version = schema_version,
+    last_updated = as.character(Sys.Date()),
     description = schema_description,
     prefixes = list(
       linkml = "https://w3id.org/linkml/",
