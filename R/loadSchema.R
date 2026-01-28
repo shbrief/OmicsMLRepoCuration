@@ -403,7 +403,33 @@ validate_data_against_schema <- function(data, schema) {
       has_pattern <- !is.null(field_def$validation$pattern)
       has_allowed_values <- !is.null(field_def$validation$allowed_values)
       
-      if (has_multiple_values && has_delimiter && has_pattern) {
+      if (has_multiple_values && has_delimiter && has_allowed_values) {
+        # Field has multiple values with delimiter and allowed values list (enum)
+        allowed_values <- field_def$validation$allowed_values
+        delimiter <- field_def$validation$delimiter
+        
+        non_na_values <- data[[col]][!is.na(data[[col]])]
+        if (length(non_na_values) > 0) {
+          for (val_idx in seq_along(non_na_values)) {
+            cell_value <- non_na_values[val_idx]
+            # Split by delimiter to get individual values
+            individual_values <- strsplit(cell_value, delimiter, fixed = TRUE)[[1]]
+            individual_values <- trimws(individual_values)
+            individual_values <- individual_values[individual_values != ""]
+            
+            # Check each individual value against allowed values
+            invalid_values <- individual_values[!individual_values %in% allowed_values]
+            if (length(invalid_values) > 0) {
+              validation_results$warnings <- c(
+                validation_results$warnings,
+                paste0("Field '", col, "' row ", val_idx, 
+                       " has invalid values: ", paste(invalid_values, collapse = ", "),
+                       ". Allowed values: ", paste(allowed_values, collapse = ", "))
+              )
+            }
+          }
+        }
+      } else if (has_multiple_values && has_delimiter && has_pattern) {
         # Check if pattern looks like a static enum (contains |)
         pattern <- field_def$validation$pattern
         if (grepl("\\|", pattern)) {
@@ -772,22 +798,23 @@ table_to_yaml_schema <- function(schema_table,
     
     # Parse allowed values
     if (!is.na(row$allowedvalues) && row$allowedvalues != "") {
-      # Check if it's a pattern or list of values
-      # Improved logic: Only treat as regex pattern if it has regex-specific metacharacters
-      # that are NOT commonly found in plain enum values
-      # Regex indicators: anchors (^,$), character classes [..], quantifiers {..}, 
-      # escaped sequences (\d, \w, \s, etc.), but NOT simple parentheses in pipe-separated lists
-      is_regex_pattern <- grepl("^\\^|\\$$|\\[.*\\]|\\{\\d|\\\\[dDwWsS]", row$allowedvalues) &&
-                         !grepl("\\|", row$allowedvalues)
+      # Determine if this should be treated as an enum list or regex pattern
+      # Check corpus.type if available
+      is_enum <- FALSE
+      if ("corpus.type" %in% names(row) && !is.na(row$corpus.type)) {
+        corpus_type <- as.character(row$corpus.type)
+        # Only split by | when corpus.type indicates it's an enum
+        is_enum <- corpus_type %in% c("custom_enum", "static_enum", "binary")
+      }
       
-      if (is_regex_pattern) {
-        # Looks like a regex pattern
-        validation$pattern <- row$allowedvalues
-      } else {
+      if (is_enum) {
         # Split by | to get allowed values (enum list)
         allowed_vals <- strsplit(as.character(row$allowedvalues), "\\|")[[1]]
         allowed_vals <- trimws(allowed_vals)
         validation$allowed_values <- allowed_vals
+      } else {
+        # Treat as regex pattern
+        validation$pattern <- row$allowedvalues
       }
     }
     

@@ -21,7 +21,7 @@ family:
   description: A number identifying the family subjects belong; not corrected for
     meta-analyses.
   validation:
-    allowed_values: .+
+    pattern: .+
 fmt_id:
   col_name: fmt_id
   col_class: character
@@ -31,7 +31,7 @@ fmt_id:
   description: The id assigned to the FMT (Fecal microbiota transplantation) participants
     in the study
   validation:
-    allowed_values: .+
+    pattern: .+
     delimiter: ;
 location:
   col_name: location
@@ -41,7 +41,7 @@ location:
   multiple_values: no
   description: Free-form additional location information.
   validation:
-    allowed_values: .+
+    pattern: .+
 uncurated_metadata:
   col_name: uncurated_metadata
   col_class: character
@@ -50,7 +50,7 @@ uncurated_metadata:
   multiple_values: yes
   description: Additional information that doesn't belong to the existing fields
   validation:
-    allowed_values: .+
+    pattern: .+
     delimiter: <;>
 antibiotics_current_use:
   col_name: antibiotics_current_use
@@ -554,11 +554,7 @@ study_name:
   multiple_values: no
   description: Dataset name.
   validation:
-    allowed_values:
-    - '[a-zA-Z-]+_[0-9]{4}'
-    - '[a-zA-Z-]+_[0-9]{4}[a-zA-Z-]+'
-    - '[a-zA-Z-]+_[0-9]{4}_[a-zA-Z-]+'
-    - '[a-zA-Z-]+_[0-9]{4}_[a-zA-Z0-9]+'
+    pattern: '[a-zA-Z-]+_[0-9]{4}|[a-zA-Z-]+_[0-9]{4}[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z0-9]+'
 subcohort:
   col_name: subcohort
   col_class: character
@@ -586,10 +582,7 @@ tumor_staging_tnm:
   description: Tumor-node-metastasis (TNM) tumor staging system (tumor staging) (SNOMED:254293002).A
     system to describe the amount and spread of cancer in a patient's body
   validation:
-    allowed_values:
-    - t[x1-4]n[x0-3]m[x0-1]
-    - pTis
-    - Tis
+    pattern: t[x1-4]n[x0-3]m[x0-1]|pTis|Tis
 age_group:
   col_name: age_group
   col_class: character
