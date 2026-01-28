@@ -1,6 +1,6 @@
 id: https://example.org/curatedMetagenomicData
 name: curatedMetagenomicData
-version: 1.0.7
+version: 1.0.8
 description: Metadata schema for curatedMetagenomicData package
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -306,7 +306,7 @@ slots:
     description: Value for feces_phenotype
     range: string
     multivalued: yes
-    pattern: ^[1-9]\d*(\.\d+)?$
+    pattern: ^\d+(\.\d+)?$
   neonatal_birth_weight:
     description: The mass or quantity of heaviness of an individual at BIRTH. (EFO:0004344)
       Unit is in gram.

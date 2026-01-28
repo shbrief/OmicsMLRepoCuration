@@ -1,7 +1,7 @@
 Package: OmicsMLRepoCuration
 Type: Package
 Title: Help metadata curation with ontology
-Version: 0.1.9
+Version: 0.1.10
 Date: 2026-1-28
 Authors@R: 
     c(person(given = "Sehyun",

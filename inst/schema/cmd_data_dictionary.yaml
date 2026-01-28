@@ -2,7 +2,7 @@ schema_info:
   name: curatedMetagenomicData_metadata_schema
   version: 1.0.0
   description: Metadata schema for curatedMetagenomicData package
-  last_updated: '2026-01-27'
+  last_updated: '2026-01-28'
 curator:
   col_name: curator
   col_class: character
@@ -200,7 +200,10 @@ fmt_role:
     recipient's samples, timing information (i.e., before or after FMT) is included
     as well.
   validation:
-    pattern: Recipient (after procedure)|Recipient (before procedure)|Donor
+    allowed_values:
+    - Recipient (after procedure)
+    - Recipient (before procedure)
+    - Donor
 lifestyle:
   col_name: lifestyle
   col_class: character
@@ -473,7 +476,7 @@ feces_phenotype_value:
   multiple_values: yes
   description: Value for feces_phenotype
   validation:
-    pattern: ^[1-9]\d*(\.\d+)?$
+    pattern: ^\d+(\.\d+)?$
     delimiter: <;>
 neonatal_birth_weight:
   col_name: neonatal_birth_weight
@@ -551,7 +554,11 @@ study_name:
   multiple_values: no
   description: Dataset name.
   validation:
-    pattern: '[a-zA-Z-]+_[0-9]{4}|[a-zA-Z-]+_[0-9]{4}[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z0-9]+'
+    allowed_values:
+    - '[a-zA-Z-]+_[0-9]{4}'
+    - '[a-zA-Z-]+_[0-9]{4}[a-zA-Z-]+'
+    - '[a-zA-Z-]+_[0-9]{4}_[a-zA-Z-]+'
+    - '[a-zA-Z-]+_[0-9]{4}_[a-zA-Z0-9]+'
 subcohort:
   col_name: subcohort
   col_class: character
@@ -579,7 +586,10 @@ tumor_staging_tnm:
   description: Tumor-node-metastasis (TNM) tumor staging system (tumor staging) (SNOMED:254293002).A
     system to describe the amount and spread of cancer in a patient's body
   validation:
-    pattern: t[x1-4]n[x0-3]m[x0-1]|pTis|Tis
+    allowed_values:
+    - t[x1-4]n[x0-3]m[x0-1]
+    - pTis
+    - Tis
 age_group:
   col_name: age_group
   col_class: character
@@ -692,8 +702,10 @@ feces_phenotype:
   description: Measurements collected from stool sample, including observation, chemical
     test, and diagnostic procedure
   validation:
-    pattern: Bristol stool form score (observable entity)|Calprotectin Measurement|Harvey-Bradshaw
-      Index Clinical Classification
+    allowed_values:
+    - Bristol stool form score (observable entity)
+    - Calprotectin Measurement
+    - Harvey-Bradshaw Index Clinical Classification
     delimiter: <;>
 neonatal_delivery_procedure:
   col_name: neonatal_delivery_procedure
@@ -753,8 +765,11 @@ smoker:
   description: Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when
     the past smoking behavior information is unavailable.
   validation:
-    pattern: Smoker (finding)|Non-smoker (finding)|Ex-smoker (finding)|Never smoked
-      tobacco (finding)
+    allowed_values:
+    - Smoker (finding)
+    - Non-smoker (finding)
+    - Ex-smoker (finding)
+    - Never smoked tobacco (finding)
     delimiter: ;
 tumor_staging_ajcc:
   col_name: tumor_staging_ajcc
