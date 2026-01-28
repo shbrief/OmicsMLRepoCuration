@@ -26,7 +26,12 @@
 #' @param convert_na Logical. If TRUE (default), convert character "NA" to 
 #'   logical NA values
 #' @param expand_rows Logical. If TRUE and delim is provided, expand to multiple 
-#'   rows (long format). If FALSE (default), expand to multiple columns (wide format).
+#'   rows (long format). If FALSE (default) and both delim and sep are provided, 
+#'   behavior depends on keep_delim parameter.
+#' @param keep_delim Logical. If TRUE and both delim and sep are provided, splits 
+#'   each delimited value by separator and recombines with delimiter, creating 2 
+#'   columns that preserve the delimiter. If FALSE (default), creates wide format 
+#'   with multiple columns.
 #'
 #' @return A data frame with split columns or expanded rows
 #'
@@ -50,7 +55,16 @@
 #' )
 #' result <- splitColumnBySep(data, targetCol = "feature", delim = "<;>", sep = ":")
 #' 
-#' # Example 4: Multiple entries with delimiter and separator
+#' # Example 4: Split by separator, preserve delimiter (2 columns)
+#' data <- data.frame(
+#'   feces_phenotype = "Calprotectin Measurement:69.02708<;>Harvey-Bradshaw Index:4"
+#' )
+#' result <- splitColumnBySep(data, targetCol = "feces_phenotype", 
+#'                            delim = "<;>", sep = ":", keep_delim = TRUE)
+#' # Result: feces_phenotype = "Calprotectin Measurement<;>Harvey-Bradshaw Index"
+#' #         feces_phenotype_value = "69.02708<;>4"
+#' 
+#' # Example 5: Multiple entries with delimiter and separator
 #' data <- data.frame(
 #'   metadata = "age:45;bmi:28.5;height:175"
 #' )
@@ -66,7 +80,8 @@ splitColumnBySep <- function(data,
                              position = "last",
                              remove = TRUE,
                              convert_na = TRUE,
-                             expand_rows = FALSE) {
+                             expand_rows = FALSE,
+                             keep_delim = FALSE) {
   
   # Validate inputs
   if (!is.data.frame(data)) {
@@ -103,14 +118,21 @@ splitColumnBySep <- function(data,
                               col_position, col_values, remove, convert_na))
   }
   
-  # Case 3: Both delimiter and separator provided (wide format)
+  # Case 3: Both delimiter and separator with keep_delim=TRUE (2 columns, preserve delim)
+  if (!is.null(delim) && !is.null(sep) && keep_delim) {
+    return(.split_by_sep_keep_delim(data, targetCol, delim, sep, newColNames, 
+                                    position, col_position, col_values, 
+                                    remove, convert_na))
+  }
+  
+  # Case 4: Both delimiter and separator provided (wide format)
   if (!is.null(delim) && !is.null(sep)) {
     return(.split_by_delim_and_sep_wide(data, targetCol, delim, sep, 
                                         newColNames, position, col_position, 
                                         col_values, remove, convert_na))
   }
   
-  # Case 4: Only delimiter provided but expand_rows = FALSE
+  # Case 5: Only delimiter provided but expand_rows = FALSE
   if (!is.null(delim) && is.null(sep) && !expand_rows) {
     warning("Delimiter provided without separator and expand_rows=FALSE. ",
             "Returning data with values concatenated by delimiter.")
@@ -191,6 +213,84 @@ splitColumnBySep <- function(data,
     # Handle cases where there's no separator
     no_sep <- !grepl(sep_escaped, col_values, fixed = FALSE)
     col2_values[no_sep] <- NA_character_
+  }
+  
+  # Convert "NA" strings to logical NA if requested
+  if (convert_na) {
+    col1_values[col1_values == "NA"] <- NA_character_
+    col2_values[col2_values == "NA"] <- NA_character_
+  }
+  
+  # Create the new data frame
+  return(.reconstruct_dataframe(data, col_position, remove, 
+                                col1_values, col2_values, newColNames))
+}
+
+
+# Helper function: Split by separator while preserving delimiter (2 columns)
+.split_by_sep_keep_delim <- function(data, targetCol, delim, sep, newColNames,
+                                     position, col_position, col_values, 
+                                     remove, convert_na) {
+  
+  # Set default column names if not provided
+  if (is.null(newColNames)) {
+    newColNames <- c(targetCol, paste0(targetCol, "_value"))
+  }
+  
+  if (length(newColNames) != 2) {
+    stop("`newColNames` must be a character vector of length 2 when keep_delim=TRUE")
+  }
+  
+  # Process each row
+  col1_values <- character(length(col_values))
+  col2_values <- character(length(col_values))
+  
+  for (i in seq_along(col_values)) {
+    val <- col_values[i]
+    
+    if (is.na(val)) {
+      col1_values[i] <- NA_character_
+      col2_values[i] <- NA_character_
+      next
+    }
+    
+    # Split by delimiter first
+    parts <- strsplit(val, delim, fixed = TRUE)[[1]]
+    
+    # Split each part by separator
+    names_vec <- character(length(parts))
+    values_vec <- character(length(parts))
+    
+    for (j in seq_along(parts)) {
+      part <- parts[j]
+      
+      if (is.na(part) || part == "" || part == "NA") {
+        names_vec[j] <- NA_character_
+        values_vec[j] <- NA_character_
+        next
+      }
+      
+      # Split by separator
+      sep_split <- strsplit(part, sep, fixed = TRUE)[[1]]
+      
+      if (length(sep_split) >= 2) {
+        if (position == "last") {
+          names_vec[j] <- paste(sep_split[1:(length(sep_split)-1)], collapse = sep)
+          values_vec[j] <- sep_split[length(sep_split)]
+        } else { # first
+          names_vec[j] <- sep_split[1]
+          values_vec[j] <- paste(sep_split[2:length(sep_split)], collapse = sep)
+        }
+      } else {
+        # No separator found - treat entire value as name
+        names_vec[j] <- part
+        values_vec[j] <- NA_character_
+      }
+    }
+    
+    # Recombine with delimiter
+    col1_values[i] <- paste(names_vec, collapse = delim)
+    col2_values[i] <- paste(values_vec, collapse = delim)
   }
   
   # Convert "NA" strings to logical NA if requested
@@ -372,11 +472,24 @@ splitColumnBySep <- function(data,
 #' @param remove Logical. If TRUE (default), remove the original column
 #' @param convert_na Logical. If TRUE (default), convert character "NA" to logical NA
 #' @param expand_rows Logical. If TRUE and delim is provided, expand to multiple rows
+#' @param keep_delim Logical. If TRUE and both delim and sep provided, preserve delimiter in output
 #' @param file_sep Character(1). Field separator for reading/writing file. Default is tab "\t"
 #'
 #' @return Invisibly returns the modified data frame
 #'
 #' @examples
+#' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+#' data <- read.csv(file.path(dir, "feces_phenotype_examples.tsv"))
+#' 
+#' res <- splitColumnBySep(
+#'     data = data,
+#'     targetCol = "feces_phenotype",
+#'     delim = "<;>",
+#'     sep = ":",
+#'     newColNames = c("feces_phenotype", "feces_phenotype_value"),
+#'     keep_delim = TRUE
+#' )
+#' 
 #' \dontrun{
 #' # Example 1: Split feces_phenotype by separator only
 #' splitColumnBySep_file(
@@ -403,7 +516,6 @@ splitColumnBySep <- function(data,
 #' )
 #' }
 #'
-#' @export
 splitColumnBySep_file <- function(input_file, 
                                   output_file = NULL,
                                   targetCol,
@@ -414,6 +526,7 @@ splitColumnBySep_file <- function(input_file,
                                   remove = TRUE,
                                   convert_na = TRUE,
                                   expand_rows = FALSE,
+                                  keep_delim = FALSE,
                                   file_sep = "\t") {
   
   # Expand tilde in path
@@ -443,7 +556,8 @@ splitColumnBySep_file <- function(input_file,
     position = position,
     remove = remove,
     convert_na = convert_na,
-    expand_rows = expand_rows
+    expand_rows = expand_rows,
+    keep_delim = keep_delim
   )
   
   # Determine output file name
@@ -494,7 +608,6 @@ splitColumnBySep_file <- function(input_file,
 #' data_split <- split_feces_phenotype(data, keep_original = TRUE)
 #' }
 #'
-#' @export
 split_feces_phenotype <- function(data, 
                                    column_name = "feces_phenotype",
                                    keep_original = FALSE) {
