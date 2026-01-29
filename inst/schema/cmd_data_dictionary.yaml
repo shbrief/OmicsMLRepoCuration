@@ -2,7 +2,7 @@ schema_info:
   name: curatedMetagenomicData_metadata_schema
   version: 1.0.0
   description: Metadata schema for curatedMetagenomicData package
-  last_updated: '2026-01-28'
+  last_updated: '2026-01-29'
 age:
   col_name: age
   col_class: integer
@@ -662,7 +662,7 @@ smoker:
     - Non-smoker (finding)
     - Ex-smoker (finding)
     - Never smoked tobacco (finding)
-    delimiter: ','
+    delimiter: ;
 study_name:
   col_name: study_name
   col_class: character
@@ -760,7 +760,7 @@ tumor_staging_tnm:
   description: Tumor-node-metastasis (TNM) tumor staging system (tumor staging) (SNOMED:254293002).A
     system to describe the amount and spread of cancer in a patient's body
   validation:
-    pattern: t[x1-4]n[x0-3]m[x0-1]|pTis|Tis
+    pattern: T[x1-4]N[x0-3]M[x0-1]|pTis|Tis
 uncurated_metadata:
   col_name: uncurated_metadata
   col_class: character

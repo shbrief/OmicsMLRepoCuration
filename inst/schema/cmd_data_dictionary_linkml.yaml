@@ -1,7 +1,7 @@
 id: https://example.org/curatedMetagenomicData
 name: curatedMetagenomicData
 version: 0.0.11
-last_updated: '2026-01-28'
+last_updated: '2026-01-29'
 description: Metadata schema for curatedMetagenomicData package
 prefixes:
   linkml: https://w3id.org/linkml/
@@ -413,7 +413,7 @@ slots:
       (SNOMED:254293002).A system to describe the amount and spread of cancer in a
       patient's body
     range: string
-    pattern: t[x1-4]n[x0-3]m[x0-1]|pTis|Tis
+    pattern: T[x1-4]N[x0-3]M[x0-1]|pTis|Tis
   uncurated_metadata:
     description: Additional information that doesn't belong to the existing fields
     range: string
