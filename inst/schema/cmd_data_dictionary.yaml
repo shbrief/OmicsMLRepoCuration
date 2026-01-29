@@ -485,19 +485,18 @@ neonatal_feeding_method:
   col_class: character
   uniqueness: non-unique
   required: no
-  multiple_values: no
+  multiple_values: yes
   description: Infant feeding methods. 'Breastfeeding' refers feeding milk from human
     (include non-mother's and through bottle), 'Mixed_feeding' refers both breastfeeding
     and formula feeding, 'Exclusively Breastfeeding;Mixed Feeding' referes the cases
     where any breastfeeding was done but formula feeding information is unavailable.
   validation:
     allowed_values:
-    - Exclusively Breastfeeding
     - Mixed Feeding
     - Exclusively Breastfeeding
     - Exclusively Formula Feeding
-    - Mixed Feeding
     - No Breastfeeding
+    delimiter: ;
 neonatal_gestational_age:
   col_name: neonatal_gestational_age
   col_class: numeric
@@ -604,6 +603,16 @@ probing_pocket_depth:
     - Distal surface of tooth
     - Lingual surface of tooth
     - Mesial surface of tooth
+    delimiter: <;>
+probing_pocket_depth_value:
+  col_name: probing_pocket_depth_value
+  col_class: character
+  uniqueness: non-unique
+  required: no
+  multiple_values: yes
+  description: Value for probing_pocket_depth
+  validation:
+    pattern: ^\d+(\.\d+)?$
     delimiter: <;>
 Sample Source ID:
   col_name: Sample Source ID

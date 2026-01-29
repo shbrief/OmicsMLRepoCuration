@@ -68,6 +68,7 @@ classes:
     - obgyn_pregnancy
     - pmid
     - probing_pocket_depth
+    - probing_pocket_depth_value
     - Sample Source ID
     - sequencing_platform
     - sex
@@ -293,6 +294,7 @@ slots:
       referes the cases where any breastfeeding was done but formula feeding information
       is unavailable.
     range: neonatal_feeding_method_enum
+    multivalued: yes
   neonatal_gestational_age:
     description: The age of the conceptus, beginning from the time of FERTILIZATION.
       (EFO:0005112) Unit in weeks.
@@ -338,6 +340,11 @@ slots:
     description: Depth of periodontal pocket measured at the different tooth's regions
     range: probing_pocket_depth_enum
     multivalued: yes
+  probing_pocket_depth_value:
+    description: Value for probing_pocket_depth
+    range: string
+    multivalued: yes
+    pattern: ^\d+(\.\d+)?$
   Sample Source ID:
     description: Sample identifier.
     range: string
@@ -536,11 +543,9 @@ enums:
       Vaginal Delivery: ~
   neonatal_feeding_method_enum:
     permissible_values:
-      Exclusively Breastfeeding: ~
       Mixed Feeding: ~
       Exclusively Breastfeeding: ~
       Exclusively Formula Feeding: ~
-      Mixed Feeding: ~
       No Breastfeeding: ~
   neonatal_preterm_birth_enum:
     permissible_values:
