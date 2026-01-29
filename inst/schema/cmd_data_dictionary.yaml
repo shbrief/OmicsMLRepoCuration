@@ -662,7 +662,7 @@ smoker:
     - Non-smoker (finding)
     - Ex-smoker (finding)
     - Never smoked tobacco (finding)
-    delimiter: ;
+    delimiter: ','
 study_name:
   col_name: study_name
   col_class: character

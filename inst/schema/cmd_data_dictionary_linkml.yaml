@@ -1,6 +1,6 @@
 id: https://example.org/curatedMetagenomicData
 name: curatedMetagenomicData
-version: 1.0.9
+version: 0.0.11
 last_updated: '2026-01-28'
 description: Metadata schema for curatedMetagenomicData package
 prefixes:

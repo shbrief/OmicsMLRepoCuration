@@ -53,7 +53,7 @@
 "Sample Source ID","character","unique","required",FALSE,"Sample identifier.","[0-9a-zA-Z]\S+",NA,NA,NA,NA,NA,"regexp"
 "sequencing_platform","character","non-unique","required",FALSE,"A scientific instrument used to automate the DNA sequencing process","IlluminaHiSeq|IlluminaMiSeq|IlluminaNextSeq|IlluminaNovaSeq|IonProton",NA,NA,NA,NA,NA,"custom_enum"
 "sex","character","non-unique","optional",FALSE,"Biological sex of the subject","Female|Male","NCIT:C16576|NCIT:C20197",NA,NA,NA,NA,"static_enum"
-"smoker","character","non-unique","optional",TRUE,"Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when the past smoking behavior information is unavailable.","Smoker (finding)|Non-smoker (finding)|Ex-smoker (finding)|Never smoked tobacco (finding)","SNOMED:77176002|SNOMED:8392000|SNOMED:8517006|SNOMED:266919005",NA,NA,";",NA,"static_enum"
+"smoker","character","non-unique","optional",TRUE,"Tobacco smoking behavior.  Assign `Non-smoker (finding)` only when the past smoking behavior information is unavailable.","Smoker (finding)|Non-smoker (finding)|Ex-smoker (finding)|Never smoked tobacco (finding)","SNOMED:77176002|SNOMED:8392000|SNOMED:8517006|SNOMED:266919005",NA,NA,",",NA,"static_enum"
 "study_name","character","non-unique","optional",FALSE,"Dataset name.","[a-zA-Z-]+_[0-9]{4}|[a-zA-Z-]+_[0-9]{4}[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z-]+|[a-zA-Z-]+_[0-9]{4}_[a-zA-Z0-9]+",NA,NA,NA,NA,NA,"regexp"
 "subcohort","character","non-unique","optional",FALSE,"Identifier of a sub-set of the cohort. Can be everything.","[0-9a-zA-Z]\S+",NA,NA,NA,NA,NA,"regexp"
 "subject_id","character","non-unique","required",FALSE,"Subject identifier.","[0-9a-zA-Z]\S+",NA,NA,NA,NA,NA,"regexp"
