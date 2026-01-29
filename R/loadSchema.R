@@ -381,23 +381,46 @@ validate_data_against_schema <- function(data, schema,
       field_def <- schema[[col]]
       expected_class <- field_def$col_class
       
-      # Type checking
+      # Type checking (skip if all non-NA values are wildcards)
       actual_class <- class(data[[col]])[1]
       if (!is.null(expected_class)) {
-        type_matches <- switch(expected_class,
-          "character" = is.character(data[[col]]),
-          "integer" = is.integer(data[[col]]) || is.numeric(data[[col]]),
-          "numeric" = is.numeric(data[[col]]),
-          "double" = is.double(data[[col]]) || is.numeric(data[[col]]),
-          TRUE
-        )
+        # Filter out wildcard values before type checking
+        non_na_values <- data[[col]][!is.na(data[[col]])]
+        if (!is.null(wildcard_values) && length(wildcard_values) > 0) {
+          non_wildcard_values <- non_na_values[!non_na_values %in% wildcard_values]
+        } else {
+          non_wildcard_values <- non_na_values
+        }
         
-        if (! type_matches) {
-          validation_results$warnings <- c(
-            validation_results$warnings,
-            paste0("Field '", col, "' expected type '", expected_class, 
-                   "' but found '", actual_class, "'")
-          )
+        # Only check type if there are non-wildcard values
+        if (length(non_wildcard_values) > 0) {
+          type_valid <- FALSE
+          
+          # For numeric types, try coercing and check if conversion is successful
+          if (expected_class %in% c("integer", "numeric", "double")) {
+            # Try to coerce to numeric
+            coerced <- suppressWarnings(as.numeric(non_wildcard_values))
+            # Valid if all non-wildcard values can be coerced (no NAs introduced)
+            type_valid <- all(!is.na(coerced))
+          } else if (expected_class == "character") {
+            # For character type, values can always be coerced to character
+            type_valid <- TRUE
+          } else {
+            # For other types, use exact type matching
+            type_valid <- switch(expected_class,
+              "logical" = is.logical(data[[col]]),
+              TRUE
+            )
+          }
+          
+          if (!type_valid) {
+            validation_results$warnings <- c(
+              validation_results$warnings,
+              paste0("Field '", col, "' expected type '", expected_class, 
+                     "' but found '", actual_class, 
+                     "' with values that cannot be coerced to ", expected_class)
+            )
+          }
         }
       }
       
@@ -486,6 +509,11 @@ validate_data_against_schema <- function(data, schema,
               individual_values <- trimws(individual_values)
               individual_values <- individual_values[individual_values != ""]
               
+              # Filter out wildcard values before checking pattern
+              if (!is.null(wildcard_values) && length(wildcard_values) > 0) {
+                individual_values <- individual_values[!individual_values %in% wildcard_values]
+              }
+              
               # Check each individual value against the pattern
               for (ind_val in individual_values) {
                 if (!grepl(pattern, ind_val)) {
@@ -525,13 +553,19 @@ validate_data_against_schema <- function(data, schema,
         pattern <- field_def$validation$pattern
         non_na_values <- data[[col]][!is.na(data[[col]])]
         if (length(non_na_values) > 0) {
-          invalid <- !grepl(pattern, non_na_values)
-          if (any(invalid)) {
-            validation_results$warnings <- c(
-              validation_results$warnings,
-              paste0("Field '", col, "' has ", sum(invalid), 
-                     " values not matching pattern:  ", pattern)
-            )
+          # Filter out wildcard values before checking
+          if (!is.null(wildcard_values) && length(wildcard_values) > 0) {
+            non_na_values <- non_na_values[!non_na_values %in% wildcard_values]
+          }
+          if (length(non_na_values) > 0) {
+            invalid <- !grepl(pattern, non_na_values)
+            if (any(invalid)) {
+              validation_results$warnings <- c(
+                validation_results$warnings,
+                paste0("Field '", col, "' has ", sum(invalid), 
+                       " values not matching pattern:  ", pattern)
+              )
+            }
           }
         }
       }
