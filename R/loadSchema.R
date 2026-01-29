@@ -351,8 +351,13 @@ get_all_categories <- function(schema) {
 #'   if (length(results$errors) > 0) print(results$errors)
 #' }
 #'
+#' @param wildcard_values A character vector of values that are allowed for all fields
+#'   regardless of their validation rules. Default is c("Not applicable", "Not reported").
+#'   Set to NULL to disable wildcard matching.
+#'
 #' @export
-validate_data_against_schema <- function(data, schema) {
+validate_data_against_schema <- function(data, schema, 
+                                          wildcard_values = c("Not applicable", "Not reported")) {
   validation_results <- list(
     valid = TRUE,
     errors = c(),
@@ -418,6 +423,10 @@ validate_data_against_schema <- function(data, schema) {
             individual_values <- individual_values[individual_values != ""]
             
             # Check each individual value against allowed values
+            # Filter out wildcard values before checking
+            if (!is.null(wildcard_values) && length(wildcard_values) > 0) {
+              individual_values <- individual_values[!individual_values %in% wildcard_values]
+            }
             invalid_values <- individual_values[!individual_values %in% allowed_values]
             if (length(invalid_values) > 0) {
               validation_results$warnings <- c(
@@ -450,6 +459,10 @@ validate_data_against_schema <- function(data, schema) {
               individual_values <- individual_values[individual_values != ""]
               
               # Check each individual value against allowed values
+              # Filter out wildcard values before checking
+              if (!is.null(wildcard_values) && length(wildcard_values) > 0) {
+                individual_values <- individual_values[!individual_values %in% wildcard_values]
+              }
               invalid_values <- individual_values[!individual_values %in% allowed_values]
               if (length(invalid_values) > 0) {
                 validation_results$warnings <- c(
@@ -492,6 +505,10 @@ validate_data_against_schema <- function(data, schema) {
         allowed_values <- field_def$validation$allowed_values
         non_na_values <- data[[col]][!is.na(data[[col]])]
         if (length(non_na_values) > 0) {
+          # Filter out wildcard values before checking
+          if (!is.null(wildcard_values) && length(wildcard_values) > 0) {
+            non_na_values <- non_na_values[!non_na_values %in% wildcard_values]
+          }
           invalid_mask <- !non_na_values %in% allowed_values
           if (any(invalid_mask)) {
             invalid_vals <- unique(non_na_values[invalid_mask])

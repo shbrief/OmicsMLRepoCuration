@@ -4,12 +4,20 @@
 \alias{validate_data_against_schema}
 \title{Validate data against schema}
 \usage{
-validate_data_against_schema(data, schema)
+validate_data_against_schema(
+  data,
+  schema,
+  wildcard_values = c("Not applicable", "Not reported")
+)
 }
 \arguments{
 \item{data}{A data frame to validate against the schema.}
 
 \item{schema}{A list object returned by \code{\link{load_metadata_schema}}.}
+
+\item{wildcard_values}{A character vector of values that are allowed for all fields
+regardless of their validation rules. Default is c("Not applicable", "Not reported").
+Set to NULL to disable wildcard matching.}
 }
 \value{
 A list with three components:
