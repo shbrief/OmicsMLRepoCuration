@@ -62,7 +62,7 @@
 "tumor_size_measurement","numeric","non-unique","optional",FALSE,"The measurement of the size of a tumor mass either clinically or in a surgically resected specimen.  (NCIT:C106303)","^[1-9]\d*(\.\d+)?$",NA,NA,NA,NA,NA,"numeric"
 "tumor_size_residual_measurement","character","non-unique","optional",FALSE,"A procedure that measures the size of a residual tumor mass.  (NCIT:C198194)","^[1-9]\d*(\.\d+)?$",NA,NA,NA,NA,NA,"numeric"
 "tumor_staging_ajcc","character","non-unique","optional",FALSE,"American Joint Committee on Cancer (tumor staging) (SNOMED:258236004). A system to describe the amount and spread of cancer in a patient's body","0|I|II|III|IV|III/IV",NA,NA,NA,NA,NA,"static_enum"
-"tumor_staging_tnm","character","non-unique","optional",FALSE,"Tumor-node-metastasis (TNM) tumor staging system (tumor staging) (SNOMED:254293002).A system to describe the amount and spread of cancer in a patient's body","T[x1-4]N[x0-3]M[x0-1]|pTis|Tis",NA,NA,NA,NA,NA,"regexp"
+"tumor_staging_tnm","character","non-unique","optional",FALSE,"Tumor-node-metastasis (TNM) tumor staging system (tumor staging) (SNOMED:254293002).A system to describe the amount and spread of cancer in a patient's body","T[X1-4]N[X0-3]M[X0-1]|pTis|Tis",NA,NA,NA,NA,NA,"regexp"
 "uncurated_metadata","character","non-unique","optional",TRUE,"Additional information that doesn't belong to the existing fields",".+",NA,NA,NA,"<;>",NA,"any"
 "westernized","character","non-unique","optional",FALSE,"Subject adopt or be influenced by the cultural, economic, or political systems of Europe and North America.","Yes|No",NA,NA,NA,NA,NA,"binary"
 "zigosity","character","non-unique","optional",FALSE,"Zigosity.","monozygotic|dizygotic",NA,NA,NA,NA,NA,"custom_enum"

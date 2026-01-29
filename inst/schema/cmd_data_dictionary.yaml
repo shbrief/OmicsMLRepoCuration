@@ -760,7 +760,7 @@ tumor_staging_tnm:
   description: Tumor-node-metastasis (TNM) tumor staging system (tumor staging) (SNOMED:254293002).A
     system to describe the amount and spread of cancer in a patient's body
   validation:
-    pattern: T[x1-4]N[x0-3]M[x0-1]|pTis|Tis
+    pattern: T[X1-4]N[X0-3]M[X0-1]|pTis|Tis
 uncurated_metadata:
   col_name: uncurated_metadata
   col_class: character
