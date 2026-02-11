@@ -27,3 +27,4 @@ node <- c("FOODON:03600010", "CHEBI:166822", "NCIT:C1908", "NCIT:C41132",
 # .displayNodes(onto = onto, node = node)
 
 }
+\keyword{internal}

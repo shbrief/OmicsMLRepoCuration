@@ -32,3 +32,4 @@ original_terms <- c("NCIT:C29711", "NCIT:C270", "NCIT:C250", "NCIT:C47639",
 # .createGraph(net = net, original_terms = original_terms)
 
 }
+\keyword{internal}

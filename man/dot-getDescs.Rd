@@ -37,3 +37,4 @@ original_terms <- c("NCIT:C29711", "NCIT:C270", "NCIT:C250", "NCIT:C47639",
 # original_terms = original_terms)
 
 }
+\keyword{internal}

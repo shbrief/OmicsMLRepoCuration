@@ -30,3 +30,4 @@ nodes <- c("NCIT:C78274", "NCIT:C29711", "NCIT:C254", "NCIT:C29249",
 # .consolidateNodes(graph = graph, nodes = nodes)
 
 }
+\keyword{internal}

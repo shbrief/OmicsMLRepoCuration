@@ -37,3 +37,4 @@ original_terms <- c("NCIT:C29711", "NCIT:C270", "NCIT:C250", "NCIT:C47639",
 # max_nodes = 20)
 
 }
+\keyword{internal}

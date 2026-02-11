@@ -84,7 +84,7 @@ get_required_fields <- function(schema) {
   for (field_name in names(schema)) {
     if (is.list(schema[[field_name]]) && 
         !is.null(schema[[field_name]]$required) &&
-        schema[[field_name]]$required == TRUE) {
+        isTRUE(schema[[field_name]]$required)) {
       required <- c(required, field_name)
     }
   }

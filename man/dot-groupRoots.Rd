@@ -31,3 +31,4 @@ class = "data.frame", row.names = c(NA, -7L)),
 # .groupRoots(nets)
 
 }
+\keyword{internal}

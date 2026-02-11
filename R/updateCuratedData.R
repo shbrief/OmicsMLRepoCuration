@@ -1,6 +1,5 @@
 #' Remove duplicate values and clean empty values from a list (SUB-FUNCTION)
 #'
-#' @import dplyr
 #'
 #' @param vals_list A list. The list of values belonging to a single cell
 #' to collapse.
@@ -24,7 +23,6 @@ format_list <- function(vals_list, delimiter){
 
 #' Map original values to curated values and curated ontology term ids (SUB-FUNCTION)
 #'
-#' @import dplyr
 #'
 #' @param new_map A data frame. The complete updated map containing the original
 #' values, curated values, and curated term ids for mapping.
@@ -51,7 +49,6 @@ map_values <- function(new_map, col, delimiter, y){
 
 #' Update a column of curated data using a new mapping schema
 #'
-#' @import dplyr
 #'
 #' @param curated_data A data frame. The original version of the curated data
 #' which needs to be updated using the new map.

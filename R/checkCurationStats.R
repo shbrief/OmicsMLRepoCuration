@@ -1,8 +1,7 @@
 #' Calculate the completeness of metadata
 #'
-#' @import dplyr
+#' @importFrom dplyr pull
 #' @importFrom utils read.csv
-#' @importFrom testthat skip
 #' @importFrom stringr str_squish str_replace
 #'
 #'
@@ -55,7 +54,6 @@ checkCurationStats <- function(
     if (isTRUE(show_available_fields)) { # Place this early will be more efficient
         allCols <- colnames(tb)
         return(allCols)
-        skip()
     }
 
     res_all <- vector(mode = "character", length = length(fields_list))
@@ -74,7 +72,7 @@ checkCurationStats <- function(
         ## source fields that are derivative, thus not in the original table
         if (exists("missing_cols")) {rm(missing_cols)} # remove the variable
         if (!all(fields %in% colnames(tb)) & any(!is.na(fields))) {
-            missing_cols <- which(fields %in% colnames(tb) == FALSE)
+            missing_cols <- which(!fields %in% colnames(tb))
             msg <- paste(fields[missing_cols], "column does not exist.")
             fields <- fields[-missing_cols] # remove column(s) not in the source table
         }
@@ -90,22 +88,6 @@ checkCurationStats <- function(
                 }
             } else if (check == "unique") {
                 for (j in seq_along(fields)) {
-                    # unique_vect <- unique(tb[,fields[j]]) |> as.vector()
-                    # unique_vect <- unique(tb[,fields[j]])
-                    #
-                    # if (is.character(unique_vect)) { ## can't apply strsplit on numeric.
-                    #     unique_vect <- unique_vect |>
-                    #         strsplit(, split = "<;>") |> unlist() |>
-                    #         strsplit(, split = ";") |> unlist() |>
-                    #         unique() |> as.vector()
-                    # } else {
-                    #     unique_vect <- unique_vect |>
-                    #         pull |>
-                    #         strsplit(, split = "<;>") |> unlist() |>
-                    #         strsplit(, split = ";") |> unlist() |>
-                    #         unique() |> as.vector()
-                    # }
-
                     unique_vect <- unique(tb[, fields[j]])
 
                     if (is.data.frame(unique_vect)) {

@@ -1,8 +1,8 @@
 Package: OmicsMLRepoCuration
 Type: Package
 Title: Help metadata curation with ontology
-Version: 0.1.10
-Date: 2026-1-28
+Version: 0.99.0
+Date: 2026-01-28
 Authors@R: 
     c(person(given = "Sehyun",
             family = "Oh",
@@ -21,13 +21,14 @@ Description: This package mainly supports metadata harmonization and curation
     incorporation of the controlled language (i.e., ontology) and support for
     the comparable analysis across datasets. 
 License: GPL-3
-Depends: 
-    R (>= 4.5.1)
+URL: https://github.com/shbrief/OmicsMLRepoCuration
+BugReports: https://github.com/shbrief/OmicsMLRepoCuration/issues
+Depends:
+    R (>= 4.4.0)
 Imports:
     rols,
     utils,
     dplyr,
-    testthat,
     purrr,
     igraph,
     plyr,
@@ -40,7 +41,9 @@ Imports:
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
-Suggests: 
+Suggests:
     knitr,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.0.0)
+biocViews: Annotation, Metadata
 VignetteBuilder: knitr

@@ -8,8 +8,8 @@
 #' @return A named list. Names of elements are original nodes (`terms`).
 #' Each element is a character link to a JSON tree or the string "no tree".
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' term_ids <- c("NCIT:C2855", "NCIT:C35025", "NCIT:C122328")
 #' # .getURLs("NCIT", term_ids)
@@ -68,8 +68,8 @@
 #' the first two columns. Edges are directed from the first column to the second
 #' column. Additional columns are considered as edge attributes.
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' tree_frame <- read.csv(file.path(dir, "sample_treeframe.csv"))
@@ -105,8 +105,8 @@
 #' 
 #' @return List of grouped dataframe network representations.
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' nets <- list(`NCIT:C94631` = structure(list(from = c("NCIT:C43431",
 #' "NCIT:C16203", "NCIT:C25218", "NCIT:C49236", "NCIT:C15986", "NCIT:C15511",
@@ -137,19 +137,19 @@
 #' 
 #' @return Character vector of lowest common ancestor(s).
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' net <- read.csv(file.path(dir, "sample_net.csv"))
 #'
 #' graph <- igraph::graph_from_data_frame(d = net,
 #' vertices = unique(unlist(net)))
-#' 
+#'
 #' vex <- c("NCIT:C270", "NCIT:C93038")
 #'
 #' # .LCA(graph = graph, vex = vex)
-#' 
+#'
 .LCA <- function(graph, vex) {
     
     ## Get ancestors of each given term
@@ -185,15 +185,15 @@
 #' 
 #' @return Character vector of representative term ids.
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' net <- read.csv(file.path(dir, "sample_net.csv"))
 #'
 #' graph <- igraph::graph_from_data_frame(d = net,
 #' vertices = unique(unlist(net)))
-#' 
+#'
 #' vex <- c("NCIT:C78274", "NCIT:C270", "NCIT:C783", "NCIT:C93038",
 #' "NCIT:C47793", "NCIT:C247", "NCIT:C62002")
 #' ovex <- c("NCIT:C270", "NCIT:C93038")
@@ -246,18 +246,18 @@
 #' 
 #' @return Character vector; consolidated list of ids.
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' net <- read.csv(file.path(dir, "sample_net.csv"))
 #'
 #' graph <- igraph::graph_from_data_frame(d = net,
 #' vertices = unique(unlist(net)))
-#' 
+#'
 #' nodes <- c("NCIT:C78274", "NCIT:C29711", "NCIT:C254", "NCIT:C29249",
 #' "NCIT:C47639", "NCIT:C78272")
-#' 
+#'
 #' # .consolidateNodes(graph = graph, nodes = nodes)
 #'
 .consolidateNodes <- function(graph, nodes) {
@@ -286,22 +286,22 @@
 #' 
 #' @return Character vector of original terms covered by "node."
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' net <- read.csv(file.path(dir, "sample_net.csv"))
 #'
 #' graph <- igraph::graph_from_data_frame(d = net,
 #' vertices = unique(unlist(net)))
-#' 
+#'
 #' original_terms <- c("NCIT:C29711", "NCIT:C270", "NCIT:C250", "NCIT:C47639",
 #' "NCIT:C29249", "NCIT:C983", "NCIT:C247", "NCIT:C47384", "NCIT:C62002",
 #' "NCIT:C281")
 #'
 #' # .getDescs(graph = graph, node = "NCIT:C78274",
 #' # original_terms = original_terms)
-#' 
+#'
 .getDescs <- function(graph, node, original_terms) {
     
     ## Retrieve all descendants of given node
@@ -329,16 +329,16 @@
 #' @return An igraph network object with vertex attribute "type." "type" values
 #' include "root," "original," and "bridge."
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' net <- read.csv(file.path(dir, "sample_net.csv"))
-#' 
+#'
 #' original_terms <- c("NCIT:C29711", "NCIT:C270", "NCIT:C250", "NCIT:C47639",
 #' "NCIT:C29249", "NCIT:C983", "NCIT:C247", "NCIT:C47384", "NCIT:C62002",
 #' "NCIT:C281")
-#' 
+#'
 #' # .createGraph(net = net, original_terms = original_terms)
 #'
 .createGraph <- function(net, original_terms) {
@@ -375,15 +375,15 @@
 #' 
 #' @return A character vector of high-traffic node ids.
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' net <- read.csv(file.path(dir, "sample_net.csv"))
-#' 
+#'
 #' netgraph <- igraph::graph_from_data_frame(d = net,
 #' vertices = unique(unlist(net)))
-#' 
+#'
 #' # .busyNodes(netgraph = netgraph, max_nodes = 20)
 #'
 .busyNodes <- function(netgraph, max_nodes) {
@@ -405,17 +405,17 @@
 #' 
 #' @return Dataframe of submitted term IDs, term names, and term ontologies
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' onto <- c("FOODON", "CHEBI", "NCIT", "NCIT", "NCIT", "SNOMED", "SNOMED",
 #' "SNOMED")
 #' node <- c("FOODON:03600010", "CHEBI:166822", "NCIT:C1908", "NCIT:C41132",
 #' "NCIT:C25218", "SNOMED:438451000124100", "SNOMED:372740001",
 #' "SNOMED:48070003")
-#' 
+#'
 #' # .displayNodes(onto = onto, node = node)
-#' 
+#'
 .displayNodes <- function(onto, node) {
     
     ## Initialize dataframe to store term information
@@ -442,7 +442,7 @@
         if (curont %in% qdrf$ontology_prefix) {
             record <- qdrf[qdrf$ontology_prefix == curont, ][1,]
         } else if (TRUE %in% qdrf$is_defining_ontology) {
-            record <- qdrf[qdrf$is_defining_ontology == TRUE, ]
+            record <- qdrf[qdrf$is_defining_ontology, ]
         } else {
             record <- qdrf[1, ]
         }
@@ -464,18 +464,18 @@
 #' 
 #' @return A character vector of representative nodes.
 #' 
-#' @export
-#' 
+#' @keywords internal
+#'
 #' @examples
 #' dir <- system.file("extdata", package = "OmicsMLRepoCuration")
 #' net <- read.csv(file.path(dir, "sample_net.csv"))
-#' 
+#'
 #' netgraph <- igraph::graph_from_data_frame(d = net,
 #' vertices = unique(unlist(net)))
 #' original_terms <- c("NCIT:C29711", "NCIT:C270", "NCIT:C250", "NCIT:C47639",
 #' "NCIT:C29249", "NCIT:C983", "NCIT:C247", "NCIT:C47384", "NCIT:C62002",
 #' "NCIT:C281")
-#' 
+#'
 #' # .clusterNodes(netgraph = netgraph, original_terms = original_terms,
 #' # max_nodes = 20)
 #'

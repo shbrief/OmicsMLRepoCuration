@@ -27,3 +27,4 @@ tree_frame <- read.csv(file.path(dir, "sample_treeframe.csv"))
 # .createNetwork(tree_frame = tree_frame)
 
 }
+\keyword{internal}

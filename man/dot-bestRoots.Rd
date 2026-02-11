@@ -33,3 +33,4 @@ ovex <- c("NCIT:C270", "NCIT:C93038")
 # .bestRoots(graph = graph, vex = vex, ovex = ovex)
 
 }
+\keyword{internal}

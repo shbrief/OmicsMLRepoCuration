@@ -25,7 +25,7 @@
 
 #' Get the top nodes for dynamic enum.
 #'
-#' @import dplyr
+#' @importFrom dplyr %>%
 #' @importFrom stats na.omit
 #'
 #' @param curated_col A character (1). The curated column name to find

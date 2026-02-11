@@ -31,3 +31,4 @@ vex <- c("NCIT:C270", "NCIT:C93038")
 # .LCA(graph = graph, vex = vex)
 
 }
+\keyword{internal}
