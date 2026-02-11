@@ -1,0 +1,567 @@
+---
+title: "Data Validation Against Schema"
+author: "OmicsMLRepoCuration"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{Data Validation Against Schema}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+This vignette demonstrates how to validate metadata against the OmicsMLRepo schema using the `validate_data_against_schema()` function. The validation system checks for:
+
+- **Required fields**: Ensures all mandatory columns are present
+- **Data types**: Verifies correct column types (character, integer, numeric, etc.)
+- **Pattern matching**: Validates values against regular expressions
+- **Static enums**: Checks single values against allowed lists
+- **Multiple values with static enums**: Validates delimiter-separated values where each component must match an allowed enum value
+
+## Loading the Schema
+
+First, load the package and schema:
+
+```{r load-schema}
+library(OmicsMLRepoCuration)
+
+# Load the schema from YAML file
+schema_file <- system.file("schema", "cmd_data_dictionary.yaml", 
+                          package = "OmicsMLRepoCuration")
+schema <- load_metadata_schema(schema_file)
+
+cat("Schema loaded with", length(schema) - 1, "fields\n")
+```
+
+## Basic Validation Examples
+
+### Example 1: Valid Data
+
+Let's create a minimal valid dataset:
+
+```{r valid-basic}
+valid_data <- data.frame(
+  `Sample Source ID` = c("S001", "S002", "S003"),
+  subject_id = c("SUB001", "SUB002", "SUB003"),
+  body_site = c("feces", "feces", "oral cavity"),
+  control = c("Case", "Study Control", "Case"),
+  median_read_length = c(150, 150, 150),
+  minimum_read_length = c(100, 100, 100),
+  number_bases = c(1500000, 1600000, 1400000),
+  number_reads = c(10000, 11000, 9500),
+  sequencing_platform = c("IlluminaMiSeq", "IlluminaHiSeq", "IlluminaMiSeq"),
+  target_condition = c("Type 2 diabetes mellitus", 
+                      "Colorectal cancer", 
+                      "Inflammatory bowel disease"),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+
+# Validate
+result <- validate_data_against_schema(valid_data, schema)
+
+cat("Validation result:", result$valid, "\n")
+cat("Errors:", length(result$errors), "\n")
+cat("Warnings:", length(result$warnings), "\n")
+```
+
+### Example 2: Missing Required Fields
+
+```{r invalid-missing}
+invalid_data <- data.frame(
+  subject_id = c("SUB001", "SUB002"),
+  body_site = c("feces", "feces"),
+  # Missing: Sample Source ID, control, and other required fields
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(invalid_data, schema)
+
+cat("Validation result:", result$valid, "\n")
+cat("\nErrors detected:\n")
+for (error in result$errors) {
+  cat("  -", error, "\n")
+}
+```
+
+### Example 3: Type Mismatches
+
+```{r invalid-types}
+# Using character values where integers are expected
+type_mismatch_data <- data.frame(
+  `Sample Source ID` = c("S001"),
+  subject_id = c("SUB001"),
+  body_site = c("feces"),
+  control = c("Case"),
+  median_read_length = c("one hundred fifty"),  # Should be integer
+  minimum_read_length = c(100),
+  number_bases = c(1500000),
+  number_reads = c(10000),
+  sequencing_platform = c("IlluminaMiSeq"),
+  target_condition = c("Type 2 diabetes mellitus"),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(type_mismatch_data, schema)
+
+if (length(result$warnings) > 0) {
+  cat("Warnings detected:\n")
+  for (warning in result$warnings) {
+    cat("  -", warning, "\n")
+  }
+}
+```
+
+## Static Enum Validation
+
+Fields with controlled vocabularies use static enums. Values must exactly match one of the allowed options.
+
+### Example 4: Valid Static Enum Values
+
+```{r valid-enum}
+enum_valid_data <- data.frame(
+  `Sample Source ID` = c("S001", "S002", "S003"),
+  subject_id = c("SUB001", "SUB002", "SUB003"),
+  body_site = c("feces", "oral cavity", "skin epidermis"),
+  control = c("Case", "Study Control", "Not Used"),
+  median_read_length = c(150, 150, 150),
+  minimum_read_length = c(100, 100, 100),
+  number_bases = c(1500000, 1600000, 1400000),
+  number_reads = c(10000, 11000, 9500),
+  sequencing_platform = c("IlluminaMiSeq", "IlluminaHiSeq", "IlluminaNovaSeq"),
+  target_condition = c("Diabetes", "Cancer", "IBD"),
+  age_group = c("Adult", "Elderly", "Child"),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(enum_valid_data, schema)
+
+cat("Valid enum values - Warnings:", length(result$warnings), "\n")
+```
+
+### Example 5: Invalid Static Enum Values
+
+```{r invalid-enum}
+enum_invalid_data <- data.frame(
+  `Sample Source ID` = c("S001"),
+  subject_id = c("SUB001"),
+  body_site = c("stomach"),  # Invalid - not in allowed values
+  control = c("Test Group"),  # Invalid - not in allowed values
+  median_read_length = c(150),
+  minimum_read_length = c(100),
+  number_bases = c(1500000),
+  number_reads = c(10000),
+  sequencing_platform = c("PacBio"),  # Invalid - not in allowed platforms
+  target_condition = c("Diabetes"),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(enum_invalid_data, schema)
+
+if (length(result$warnings) > 0) {
+  cat("Warnings for invalid enum values:\n")
+  for (warning in result$warnings) {
+    cat("  -", warning, "\n")
+  }
+}
+```
+
+## Multiple Values with Static Enums
+
+Some fields allow multiple values from a controlled vocabulary, separated by a delimiter. Each individual value must match an allowed enum value.
+
+### Example 6: Valid Multiple Values - Smoker Field
+
+The `smoker` field allows multiple smoking statuses separated by semicolons (`;`).
+
+```{r valid-multiple-smoker}
+smoker_valid <- data.frame(
+  smoker = c(
+    "smoker (finding)",
+    "Non-smoker (finding);Ex-smoker (finding)",
+    "Never smoked tobacco (finding)",
+    "Ex-smoker (finding);Non-smoker (finding)"
+  ),
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(smoker_valid, schema)
+
+cat("Valid multiple smoker values:\n")
+cat("  Errors (missing required fields):", length(result$errors), "\n")
+cat("  Field validation warnings:", length(result$warnings), "\n")
+if (length(result$warnings) == 0) {
+  cat("  ✓ All smoker values are valid!\n")
+  cat("  Note: Errors shown are for missing required fields, not the smoker field itself\n")
+}
+```
+
+### Example 7: Invalid Multiple Values - Smoker Field
+
+```{r invalid-multiple-smoker}
+smoker_invalid <- data.frame(
+  smoker = c(
+    "Heavy smoker",  # Invalid value
+    "smoker (finding);Occasional smoker",  # Second value is invalid
+    "Non-smoker (finding);Light smoker;Ex-smoker (finding)"  # Middle value is invalid
+  ),
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(smoker_invalid, schema)
+
+cat("Invalid multiple smoker values:\n")
+if (length(result$warnings) > 0) {
+  for (warning in result$warnings) {
+    cat("  -", warning, "\n")
+  }
+}
+```
+
+### Example 8: Valid Multiple Values - Feces Phenotype Field
+
+The `feces_phenotype` field uses a compound delimiter (`<;>`):
+
+```{r valid-multiple-feces}
+feces_valid <- data.frame(
+  feces_phenotype = c(
+    "Bristol stool form score (observable entity)",
+    "Bristol stool form score (observable entity)<;>Calprotectin Measurement",
+    "Calprotectin Measurement<;>Harvey-Bradshaw Index Clinical Classification",
+    "Bristol stool form score (observable entity)<;>Calprotectin Measurement<;>Harvey-Bradshaw Index Clinical Classification"
+  ),
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(feces_valid, schema)
+
+cat("Valid multiple feces_phenotype values:\n")
+cat("  Errors (missing required fields):", length(result$errors), "\n")
+cat("  Field validation warnings:", length(result$warnings), "\n")
+if (length(result$warnings) == 0) {
+  cat("  ✓ All feces_phenotype values are valid!\n")
+  cat("  Note: Errors shown are for missing required fields, not the feces_phenotype field itself\n")
+}
+```
+
+### Example 9: Invalid Multiple Values - Feces Phenotype Field
+
+```{r invalid-multiple-feces}
+feces_invalid <- data.frame(
+  feces_phenotype = c(
+    "Invalid phenotype",  # Invalid value
+    "Bristol stool form score (observable entity)<;>Unknown test",  # Second value is invalid
+    "Stool consistency<;>Calprotectin Measurement"  # First value is invalid
+  ),
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(feces_invalid, schema)
+
+cat("Invalid multiple feces_phenotype values:\n")
+if (length(result$warnings) > 0) {
+  for (warning in result$warnings) {
+    cat("  -", warning, "\n")
+  }
+}
+```
+
+### Example 10: Combined Field Validation - Feces Phenotype and Value Pairs
+
+The validator can check that paired fields (like `feces_phenotype` and `feces_phenotype_value`) have matching counts and proper formatting. The combined format follows the pattern: `phenotype1:value1<;>phenotype2:value2`.
+
+#### Valid Combined Pairs
+
+```{r valid-combined-pairs}
+# Single pair
+feces_paired_valid <- data.frame(
+  subject_id = c("S001", "S002", "S003"),
+  feces_phenotype = c(
+    "Bristol stool form score (observable entity)",
+    "Calprotectin Measurement",
+    "Bristol stool form score (observable entity)<;>Calprotectin Measurement"
+  ),
+  feces_phenotype_value = c(
+    "4",  # Single value for single phenotype
+    "150.5",  # Single value for single phenotype
+    "3<;>89.3"  # Two values for two phenotypes
+  ),
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(feces_paired_valid, schema)
+
+cat("Valid combined feces phenotype-value pairs:\n")
+cat("  Total warnings:", length(result$warnings), "\n")
+if (length(result$warnings) == 0) {
+  cat("  ✓ All phenotype-value pairs validated successfully!\n")
+  cat("  Combined formats:\n")
+  cat("    - Row 1: Bristol stool form score (observable entity):4\n")
+  cat("    - Row 2: Calprotectin Measurement:150.5\n")
+  cat("    - Row 3: Bristol stool form score (observable entity):3<;>Calprotectin Measurement:89.3\n")
+}
+```
+
+#### Invalid Combined Pairs - Count Mismatch
+
+```{r invalid-combined-count}
+# Mismatched counts
+feces_paired_mismatch <- data.frame(
+  subject_id = c("S001", "S002"),
+  feces_phenotype = c(
+    "Bristol stool form score (observable entity)<;>Calprotectin Measurement",  # 2 phenotypes
+    "Bristol stool form score (observable entity)"  # 1 phenotype
+  ),
+  feces_phenotype_value = c(
+    4,  # Only 1 value for 2 phenotypes - ERROR!
+    "3<;>150"  # 2 values for 1 phenotype - ERROR!
+  ),
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(feces_paired_mismatch, schema)
+
+cat("Count mismatch errors:\n")
+if (length(result$warnings) > 0) {
+  for (warning in result$warnings) {
+    cat("  -", warning, "\n")
+  }
+}
+```
+
+#### Invalid Combined Pairs - Missing Partner
+
+```{r invalid-combined-missing}
+# Missing partner field
+feces_paired_missing <- data.frame(
+  subject_id = c("S001", "S002"),
+  feces_phenotype = c(
+    "Bristol stool form score (observable entity)",
+    NA  # Missing phenotype but value present - ERROR!
+  ),
+  feces_phenotype_value = c(
+    NA,  # Missing value but phenotype present - ERROR!
+    "150.5"
+  ),
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(feces_paired_missing, schema)
+
+cat("Missing partner field errors:\n")
+if (length(result$warnings) > 0) {
+  for (warning in result$warnings) {
+    cat("  -", warning, "\n")
+  }
+}
+```
+
+#### Combined Validation Summary
+
+The combined field validation ensures:
+- **Equal counts**: Both fields must have the same number of values when split by delimiter
+- **Valid phenotypes**: Each phenotype must be from the allowed enum values
+- **Valid values**: Each measurement value must match the expected numeric pattern
+- **Complete pairs**: If one field has a value, the other must also have a value (both can be NA)
+- **Proper formatting**: Values can be combined as `phenotype:value` pairs separated by `<;>`
+
+### Example 12: Whitespace Handling
+
+The validator automatically trims whitespace around values:
+
+```{r whitespace-handling}
+whitespace_data <- data.frame(
+  smoker = c(
+    "  smoker (finding)  ",  # Leading and trailing spaces
+    "Non-smoker (finding) ; Ex-smoker (finding)",  # Spaces around delimiter
+    "Never smoked tobacco (finding) ;  smoker (finding)  "  # Mixed spacing
+  ),
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(whitespace_data, schema)
+
+cat("Whitespace handling:\n")
+cat("  Field validation warnings:", length(result$warnings), "\n")
+if (length(result$warnings) == 0) {
+  cat("  ✓ Whitespace correctly trimmed - all values valid!\n")
+}
+```
+
+## Comprehensive Validation Workflow
+
+Here's a complete example of validating a full dataset:
+
+```{r comprehensive-example}
+# Create a realistic dataset
+full_data <- data.frame(
+  `Sample Source ID` = c("S001", "S002", "S003"),
+  subject_id = c("P001", "P002", "P003"),
+  body_site = c("feces", "feces", "oral cavity"),
+  control = c("Case", "Case", "Study Control"),
+  median_read_length = c(150, 150, 150),
+  minimum_read_length = c(100, 100, 100),
+  number_bases = c(1500000, 1600000, 1400000),
+  number_reads = c(10000, 11000, 9500),
+  sequencing_platform = c("IlluminaMiSeq", "IlluminaMiSeq", "IlluminaHiSeq"),
+  target_condition = c("Type 2 diabetes mellitus", 
+                      "Type 2 diabetes mellitus", 
+                      "Periodontal disease"),
+  age = c(45, 52, 38),
+  age_unit = c("Year", "Year", "Year"),
+  age_group = c("Adult", "Adult", "Adult"),
+  smoker = c(
+    "Non-smoker (finding)",
+    "Ex-smoker (finding)",
+    "smoker (finding);Ex-smoker (finding)"
+  ),
+  feces_phenotype = c(
+    "Bristol stool form score (observable entity)",
+    "Calprotectin Measurement",
+    NA  # Optional field can be NA
+  ),
+  feces_phenotype_value = c(
+    4,  # Corresponding value for Bristol stool score
+    120.5,  # Corresponding value for Calprotectin
+    NA  # NA to match the NA phenotype
+  ),
+  antibiotics_current_use = c("No", "No", "Yes"),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+
+# Validate
+result <- validate_data_against_schema(full_data, schema)
+
+# Display results
+cat("=== Validation Summary ===\n")
+cat("Overall valid:", result$valid, "\n")
+cat("Number of errors:", length(result$errors), "\n")
+cat("Number of warnings:", length(result$warnings), "\n\n")
+
+if (length(result$errors) > 0) {
+  cat("Errors:\n")
+  for (error in result$errors) {
+    cat("  •", error, "\n")
+  }
+  cat("\n")
+}
+
+if (length(result$warnings) > 0) {
+  cat("Warnings:\n")
+  for (warning in result$warnings) {
+    cat("  •", warning, "\n")
+  }
+}
+
+if (result$valid && length(result$warnings) == 0) {
+  cat("✓ All validation checks passed!\n")
+}
+```
+
+## Best Practices
+
+### 1. Check Validation Before Submission
+
+Always validate your data before submitting:
+
+```{r eval=FALSE}
+# Load your data
+my_data <- read.csv("my_metadata.csv", stringsAsFactors = FALSE)
+
+# Validate
+result <- validate_data_against_schema(my_data, schema)
+
+# Check for issues
+if (!result$valid || length(result$warnings) > 0) {
+  print("Please fix the following issues:")
+  print(result$errors)
+  print(result$warnings)
+} else {
+  cat("Data is valid and ready for submission!\n")
+}
+```
+
+### 2. Understand Field Requirements
+
+Use helper functions to explore the schema:
+
+```{r schema-exploration}
+# Get all required fields
+required_fields <- get_required_fields(schema)
+cat("Required fields:\n")
+cat(paste("  -", required_fields[1:5], collapse = "\n"), "\n")
+cat("  ... and", length(required_fields) - 5, "more\n\n")
+
+# Get field definition
+field_def <- get_field_definition(schema, "smoker")
+cat("Smoker field definition:\n")
+cat("  Type:", field_def$col_class, "\n")
+cat("  Required:", field_def$required, "\n")
+cat("  Multiple values:", field_def$multiple_values, "\n")
+cat("  Delimiter:", field_def$validation$delimiter, "\n")
+```
+
+### 3. Handle Multiple Values Correctly
+
+For fields that accept multiple values:
+
+- Use the correct delimiter (check the schema)
+- Ensure each value matches an allowed option exactly
+- Whitespace is automatically trimmed, but maintain consistent formatting
+
+```{r multiple-values-tips}
+# Correct usage
+correct_examples <- data.frame(
+  smoker = c(
+    "smoker (finding);Non-smoker (finding)",
+    "Ex-smoker (finding)"
+  ),
+  feces_phenotype = c(
+    "Bristol stool form score (observable entity)<;>Calprotectin Measurement",
+    "Harvey-Bradshaw Index Clinical Classification"
+  ),
+  stringsAsFactors = FALSE
+)
+
+# Common mistakes to avoid
+# Wrong delimiter: "smoker (finding),Non-smoker (finding)"  # Uses comma instead of semicolon
+# Wrong values: "smoker;non-smoker"  # Values don't match allowed terms exactly
+# Wrong delimiter for feces: "Bristol;Calprotectin"  # Uses ; instead of <;>
+```
+
+
+
+## Summary
+
+The validation system provides comprehensive checking for:
+
+1. **Required fields** - ensures critical data is present
+2. **Data types** - verifies correct column types
+3. **Patterns** - validates against regular expressions
+4. **Static enums** - checks values against controlled vocabularies
+5. **Multiple values with delimiters** - validates each component of multi-value fields
+
+Use `validate_data_against_schema()` regularly during data preparation to catch issues early and ensure data quality.
+
+## Session Info
+
+```{r session-info}
+sessionInfo()
+```

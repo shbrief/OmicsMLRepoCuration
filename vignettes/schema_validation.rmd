@@ -1,0 +1,621 @@
+---
+title: "Schema Validation"
+author: "Sehyun Oh, Claude"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Schema Validation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.show = "hold",
+  results = "hold",
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+```{r load_packages, message=FALSE, warning=FALSE}
+library(OmicsMLRepoCuration)
+library(yaml)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+```
+
+# Introduction
+
+This vignette demonstrates how to validate metadata against a LinkML (Linked Data Modeling Language) schema. LinkML provides a powerful framework for defining and validating structured data with rich semantics, including support for:
+
+- Type validation
+- Required field checking  
+- Pattern matching with regular expressions
+- Controlled vocabularies (enums)
+- Dynamic enums based on ontology terms
+- Multivalued fields
+
+We'll cover both basic validation and advanced cases including dynamic enums that use ontology hierarchies.
+
+---
+
+# Load the Schema
+
+First, load the YAML schema file:
+
+```{r load_schema}
+# Load the YAML schema
+schema_file <- system.file("schema", "cmd_schema.yaml", 
+                          package = "OmicsMLRepoCuration")
+schema <- load_metadata_schema(schema_file)
+
+# Display schema metadata
+cat("Schema Name:", schema$schema_info$name, "\n")
+cat("Version:", schema$schema_info$version, "\n")
+cat("Last Updated:", schema$schema_info$last_updated, "\n")
+cat("Number of Fields:", length(schema) - 1, "\n")  # Exclude schema_info
+```
+
+---
+
+# Basic Validation Examples
+
+## Example 1: Valid Data
+
+Let's create a sample dataset that meets all schema requirements:
+
+```{r valid_data}
+# Create valid sample data
+valid_data <- data.frame(
+  sample_id = c("SAMPLE001", "SAMPLE002", "SAMPLE003"),
+  subject_id = c("SUB001", "SUB002", "SUB003"),
+  body_site = c("stool", "stool", "skin"),
+  country = c("USA", "CAN", "USA"),
+  sex = c("female", "male", "female"),
+  age = c(25, 34, 28),
+  age_unit = c("Year", "Year", "Year"),
+  control = c("case", "control", "case"),
+  ancestry = c("HANCESTRO:0005", "HANCESTRO:0005", "HANCESTRO:0014"),
+  ancestry_details = c("HANCESTRO:0568", "HANCESTRO:0568", "HANCESTRO:0581"),
+  stringsAsFactors = FALSE
+)
+
+# Validate
+validation_results <- validate_data_against_schema(valid_data, schema)
+
+# Display results
+cat("Validation Status:", validation_results$valid, "\n")
+cat("Number of Errors:", length(validation_results$errors), "\n")
+cat("Number of Warnings:", length(validation_results$warnings), "\n")
+
+if (length(validation_results$errors) > 0) {
+  cat("\nErrors:\n")
+  for (err in validation_results$errors) {
+    cat("  -", err, "\n")
+  }
+}
+
+if (length(validation_results$warnings) > 0) {
+  cat("\nWarnings:\n")
+  for (warn in validation_results$warnings) {
+    cat("  -", warn, "\n")
+  }
+}
+```
+
+## Example 2: Missing Required Fields
+
+Now let's see what happens when required fields are missing:
+
+```{r missing_required}
+# Create data missing required fields
+invalid_data_missing <- data.frame(
+  sample_id = c("SAMPLE001", "SAMPLE002"),
+  age = c(25, 34),
+  stringsAsFactors = FALSE
+)
+
+# Validate
+validation_results_missing <- validate_data_against_schema(invalid_data_missing, schema)
+
+# Display results
+cat("Validation Status:", validation_results_missing$valid, "\n\n")
+
+if (length(validation_results_missing$errors) > 0) {
+  cat("Errors:\n")
+  for (err in validation_results_missing$errors) {
+    cat("  -", err, "\n")
+  }
+}
+```
+
+## Example 3: Type Mismatch
+
+Let's test what happens with incorrect data types:
+
+```{r type_mismatch}
+# Create data with wrong types
+invalid_data_types <- data.frame(
+  sample_id = c("SAMPLE001", "SAMPLE002"),
+  subject_id = c("SUB001", "SUB002"),
+  body_site = c("stool", "stool"),
+  country = c("USA", "CAN"),
+  sex = c("female", "male"),
+  age = c("twenty-five", "thirty-four"),  # Should be integer!
+  control = c("case", "control"),
+  ancestry = c("HANCESTRO:0005", "HANCESTRO:0005"),
+  ancestry_details = c("HANCESTRO:0568", "HANCESTRO:0568"),
+  stringsAsFactors = FALSE
+)
+
+# Validate
+validation_results_types <- validate_data_against_schema(invalid_data_types, schema)
+
+# Display warnings
+if (length(validation_results_types$warnings) > 0) {
+  cat("Warnings:\n")
+  for (warn in validation_results_types$warnings) {
+    cat("  -", warn, "\n")
+  }
+}
+```
+
+---
+
+# Controlled Vocabularies (Enums)
+
+## Static Enums
+
+Some fields have predefined allowed values. Let's check the `age_group` field:
+
+```{r static_enum_info}
+# Get field definition for age_group
+age_group_def <- get_field_definition(schema, "age_group")
+
+cat("Field: age_group\n")
+cat("Description:", age_group_def$description, "\n")
+cat("\nAllowed Values:\n")
+for (val in age_group_def$validation$allowed_values) {
+  cat("  -", val, "\n")
+}
+```
+
+### Valid Static Enum
+
+```{r static_enum_valid}
+# Create data with valid enum values
+enum_valid_data <- data.frame(
+  sample_id = c("SAMPLE001", "SAMPLE002", "SAMPLE003"),
+  subject_id = c("SUB001", "SUB002", "SUB003"),
+  body_site = c("stool", "stool", "stool"),
+  country = c("USA", "CAN", "GBR"),
+  sex = c("female", "male", "female"),
+  age_group = c("Adult", "Elderly", "Child"),  # Valid enum values
+  control = c("case", "control", "case"),
+  ancestry = c("HANCESTRO:0005", "HANCESTRO:0005", "HANCESTRO:0014"),
+  ancestry_details = c("HANCESTRO:0568", "HANCESTRO:0568", "HANCESTRO:0581"),
+  stringsAsFactors = FALSE
+)
+
+validation_enum_valid <- validate_data_against_schema(enum_valid_data, schema)
+cat("Validation Status:", validation_enum_valid$valid, "\n")
+```
+
+### Invalid Static Enum
+
+```{r static_enum_invalid}
+# Create data with invalid enum value
+enum_invalid_data <- data.frame(
+  sample_id = c("SAMPLE001"),
+  subject_id = c("SUB001"),
+  body_site = c("stool"),
+  country = c("USA"),
+  sex = c("female"),
+  age_group = c("Teenager"),  # Invalid - not in allowed values!
+  control = c("case"),
+  ancestry = c("HANCESTRO:0005"),
+  ancestry_details = c("HANCESTRO:0568"),
+  stringsAsFactors = FALSE
+)
+
+# Note: Current validation focuses on required fields and types
+# For comprehensive enum validation, additional checks would be needed
+cat("For comprehensive enum validation in production,\n")
+cat("consider using linkml-validate command-line tool.\n")
+```
+
+---
+
+# Dynamic Enums with Ontologies
+
+Dynamic enums are one of the most powerful features - they allow values from ontology hierarchies rather than fixed lists. This is particularly useful for biological and medical metadata.
+
+## Understanding Dynamic Enums
+
+Dynamic enums use ontology terms and their descendants as allowed values. For example:
+
+- **`ancestry`**: Uses children of HANCESTRO:0004 (Human ancestry categories)
+- **`ancestry_details`**: Uses descendants of HANCESTRO:0004 (more specific)
+- **`disease`**: Uses descendants of disease ontology terms
+
+```{r dynamic_enum_info}
+# Check ancestry field (dynamic enum using "children")
+ancestry_def <- get_field_definition(schema, "ancestry")
+
+cat("Field: ancestry\n")
+cat("Description:", ancestry_def$description, "\n")
+cat("\nOntology Configuration:\n")
+cat("  Root Term(s):", ancestry_def$ontology$roots, "\n")
+cat("  Property:", ancestry_def$ontology$property, "\n")
+cat("\nThis means 'ancestry' should contain DIRECT CHILDREN of HANCESTRO:0004\n\n")
+
+# Check ancestry_details field (dynamic enum using "descendant")
+ancestry_details_def <- get_field_definition(schema, "ancestry_details")
+
+cat("Field: ancestry_details\n")
+cat("Description:", ancestry_details_def$description, "\n")
+cat("\nOntology Configuration:\n")
+cat("  Root Term(s):", ancestry_details_def$ontology$roots, "\n")
+cat("  Property:", ancestry_details_def$ontology$property, "\n")
+cat("\nThis means 'ancestry_details' can contain ANY DESCENDANT of HANCESTRO:0004\n")
+```
+
+## Example: Ancestry Dynamic Enum
+
+The Human Ancestry Ontology (HANCESTRO) provides a hierarchical classification of human populations.
+
+```{r ancestry_example}
+# Example valid ancestry data using HANCESTRO terms
+ancestry_data <- data.frame(
+  sample_id = c("SAMPLE001", "SAMPLE002", "SAMPLE003", "SAMPLE004"),
+  subject_id = c("SUB001", "SUB002", "SUB003", "SUB004"),
+  body_site = c("stool", "stool", "stool", "stool"),
+  country = c("JPN", "CHN", "USA", "GBR"),
+  sex = c("female", "male", "female", "male"),
+  control = c("case", "case", "control", "case"),
+  # Children of HANCESTRO:0004
+  ancestry = c("HANCESTRO:0008",  # Asian ancestry
+               "HANCESTRO:0008",  # Asian ancestry
+               "HANCESTRO:0005",  # European ancestry
+               "HANCESTRO:0005"), # European ancestry
+  # More specific descendants
+  ancestry_details = c("HANCESTRO:0015",  # Japanese ancestry
+                      "HANCESTRO:0027",  # Han Chinese ancestry
+                      "HANCESTRO:0014",  # African American
+                      "HANCESTRO:0304"), # British ancestry
+  stringsAsFactors = FALSE
+)
+
+# Display the data
+kable(ancestry_data, caption = "Sample Data with Dynamic Enum Values") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+# Validate
+validation_ancestry <- validate_data_against_schema(ancestry_data, schema)
+cat("\nValidation Status:", validation_ancestry$valid, "\n")
+```
+
+## Example: Disease Dynamic Enum
+
+Many schemas include disease fields with dynamic enums based on disease ontologies:
+
+```{r disease_example, eval=FALSE}
+# Example disease data (if disease field exists in your schema)
+# This demonstrates the concept even if not in current schema
+
+# Check if disease field exists
+if ("disease" %in% names(schema)) {
+  disease_def <- get_field_definition(schema, "disease")
+  
+  cat("Field: disease\n")
+  cat("Description:", disease_def$description, "\n")
+  
+  if (!is.null(disease_def$ontology)) {
+    cat("\nOntology Configuration:\n")
+    cat("  Root Term(s):", paste(disease_def$ontology$roots, collapse = ", "), "\n")
+    if (!is.null(disease_def$ontology$property)) {
+      cat("  Property:", disease_def$ontology$property, "\n")
+    }
+  }
+  
+  # Example disease data
+  disease_data <- data.frame(
+    sample_id = c("SAMPLE001", "SAMPLE002"),
+    subject_id = c("SUB001", "SUB002"),
+    body_site = c("stool", "stool"),
+    country = c("USA", "USA"),
+    sex = c("female", "male"),
+    control = c("case", "case"),
+    ancestry = c("HANCESTRO:0005", "HANCESTRO:0005"),
+    ancestry_details = c("HANCESTRO:0568", "HANCESTRO:0568"),
+    # Disease terms from ontology
+    disease = c("NCIT:C2926",   # Crohn's disease
+               "NCIT:C2952"),  # Ulcerative colitis
+    stringsAsFactors = FALSE
+  )
+  
+  print(kable(disease_data))
+}
+```
+
+---
+
+# Multivalued Fields with Dynamic Enums
+
+Some fields allow multiple ontology terms separated by a delimiter (typically semicolon `;`).
+
+```{r multivalued_dynamic}
+# ancestry_details is multivalued (check schema)
+cat("ancestry_details multivalued:", 
+    ancestry_details_def$multiple_values, "\n")
+
+if (!is.null(ancestry_details_def$validation$delimiter)) {
+  cat("Delimiter:", ancestry_details_def$validation$delimiter, "\n")
+}
+
+# Create data with multiple ancestry values
+multivalued_data <- data.frame(
+  sample_id = c("SAMPLE001"),
+  subject_id = c("SUB001"),
+  body_site = c("stool"),
+  country = c("USA"),
+  sex = c("female"),
+  control = c("case"),
+  ancestry = c("HANCESTRO:0005"),
+  # Multiple values separated by semicolon
+  ancestry_details = c("HANCESTRO:0568;HANCESTRO:0577;HANCESTRO:0581"),
+  stringsAsFactors = FALSE
+)
+
+cat("\nSample with multiple ancestry_details values:\n")
+print(multivalued_data$ancestry_details)
+
+# Validate
+validation_multi <- validate_data_against_schema(multivalued_data, schema)
+cat("\nValidation Status:", validation_multi$valid, "\n")
+```
+
+---
+
+# Working with Dynamic Enum Helper Functions
+
+The package provides helper functions to work with dynamic enums and ontologies.
+
+## Finding Representative Nodes
+
+When you have many ontology terms, the `mapNodes()` function helps identify representative nodes to use as dynamic enum roots:
+
+```{r map_nodes_example}
+# Load sample ontology IDs
+dir <- system.file("extdata", package = "OmicsMLRepoCuration")
+sample_ids_file <- file.path(dir, "sample_ids.csv")
+
+if (file.exists(sample_ids_file)) {
+  ids <- readLines(sample_ids_file)
+  
+  cat("Number of input ontology terms:", length(ids), "\n")
+  cat("First few terms:\n")
+  print(head(ids))
+  
+  # Find representative nodes
+  representative_nodes <- mapNodes(ids, cutoff = 0.25)
+  
+  cat("\n\nRepresentative Nodes for Dynamic Enum:\n")
+  kable(representative_nodes, 
+        caption = "Representative Ontology Nodes",
+        col.names = c("Term", "ID", "Original Ontology", 
+                     "Original Terms Covered", "Count", "Total")) %>%
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+  
+  cat("\n\nThese representative nodes can be used as 'roots' in dynamic enums.\n")
+  cat("They cover the most terms while avoiding overly broad categories.\n")
+}
+```
+
+## Adding Dynamic Enum Nodes to Schema
+
+You can programmatically add dynamic enum configurations:
+
+```{r add_dynamic_enum, eval=FALSE}
+# Example: Load data dictionary and add dynamic enum
+dd_file <- system.file("schema", "cmd_data_dictionary.csv", 
+                      package = "OmicsMLRepoCuration")
+
+if (file.exists(dd_file)) {
+  dd <- read.csv(dd_file, stringsAsFactors = FALSE)
+  
+  # Add dynamic enum for a specific column
+  # This would update the data dictionary with ontology roots
+  # dd_updated <- addDynamicEnumNodes("disease", dd)
+  
+  cat("Use addDynamicEnumNodes() to configure dynamic enums\n")
+  cat("in the data dictionary programmatically.\n")
+}
+```
+
+---
+
+# LinkML Command-Line Validation
+
+For production validation with full LinkML features, use the LinkML toolkit:
+
+## Installation
+
+```{bash install_linkml, eval=FALSE}
+# Install LinkML Python package
+pip install linkml linkml-runtime
+```
+
+## Validate Schema
+
+```{bash validate_schema, eval=FALSE}
+# Check if schema is valid LinkML
+linkml-validate inst/schema/cmd_data_dictionary_linkml.yaml
+
+# Get schema information
+python3 -c "
+from linkml_runtime import SchemaView
+schema = SchemaView('inst/schema/cmd_data_dictionary_linkml.yaml')
+print('Schema:', schema.schema.name)
+print('Version:', schema.schema.version)
+print('Classes:', len(schema.all_classes()))
+print('Slots:', len(schema.all_slots()))
+print('Enums:', len(schema.all_enums()))
+"
+```
+
+## Validate Data
+
+```{bash validate_data, eval=FALSE}
+# Validate data file against LinkML schema
+linkml-validate \
+  --schema inst/schema/cmd_data_dictionary_linkml.yaml \
+  --target-class MetadataRecord \
+  data/my_metadata.yaml
+```
+
+## Convert and Validate
+
+```{r prepare_for_linkml_validation, eval=FALSE}
+# Convert R data frame to YAML for LinkML validation
+metadata_for_validation <- list(
+  list(
+    sample_id = "SAMPLE001",
+    subject_id = "SUB001",
+    body_site = "stool",
+    country = "USA",
+    sex = "female",
+    age = 25,
+    age_unit = "Year",
+    control = "case",
+    ancestry = "HANCESTRO:0005",
+    ancestry_details = c("HANCESTRO:0568", "HANCESTRO:0577")
+  ),
+  list(
+    sample_id = "SAMPLE002",
+    subject_id = "SUB002",
+    body_site = "skin",
+    country = "CAN",
+    sex = "male",
+    age = 34,
+    age_unit = "Year",
+    control = "control",
+    ancestry = "HANCESTRO:0008",
+    ancestry_details = "HANCESTRO:0015"
+  )
+)
+
+# Write to YAML
+yaml::write_yaml(metadata_for_validation, "metadata_to_validate.yaml")
+
+cat("Data written to metadata_to_validate.yaml\n")
+cat("Run: linkml-validate --schema inst/schema/cmd_data_dictionary_linkml.yaml \\\n")
+cat("       --target-class MetadataRecord metadata_to_validate.yaml\n")
+```
+
+---
+
+# Best Practices
+
+## 1. Choose Appropriate Dynamic Enum Properties
+
+- **`children`**: Use when you want only direct children (one level down)
+- **`descendant`**: Use when you want any term in the subtree (all levels down)
+
+## 2. Use Multiple Roots for Broad Coverage
+
+```yaml
+ontology:
+  roots: 
+    - NCIT:C7057    # Disease
+    - EFO:0000408   # Disease
+  property: descendant
+```
+
+## 3. Validate Incrementally
+
+- Start with required fields
+- Add type checking
+- Then add pattern/enum validation
+- Finally validate ontology terms
+
+## 4. Document Your Ontology Sources
+
+Always document which ontology versions you're using:
+
+```yaml
+schema_info:
+  ontologies:
+    - name: HANCESTRO
+      version: 2023-01-15
+      url: http://purl.obolibrary.org/obo/hancestro.owl
+```
+
+## 5. Test with Real Data
+
+```{r test_real_data, eval=FALSE}
+# Load actual curated data
+real_data <- read.csv("path/to/curated_metadata.csv", stringsAsFactors = FALSE)
+
+# Validate
+results <- validate_data_against_schema(real_data, schema)
+
+# Generate report
+if (!results$valid) {
+  cat("VALIDATION FAILED\n")
+  cat("\nErrors:\n")
+  lapply(results$errors, function(e) cat("  - ", e, "\n"))
+}
+
+if (length(results$warnings) > 0) {
+  cat("\nWarnings:\n")
+  lapply(results$warnings, function(w) cat("  - ", w, "\n"))
+}
+
+# Summary statistics
+cat("\n\nSummary:\n")
+cat("Total rows:", nrow(real_data), "\n")
+cat("Total columns:", ncol(real_data), "\n")
+cat("Required fields present:", 
+    all(get_required_fields(schema) %in% colnames(real_data)), "\n")
+```
+
+---
+
+# Summary
+
+This vignette covered:
+
+1. **Basic validation**: Required fields, types, patterns
+2. **Static enums**: Controlled vocabularies with fixed values
+3. **Dynamic enums**: Ontology-based controlled vocabularies
+4. **Multivalued fields**: Multiple values with delimiters
+5. **Helper functions**: `mapNodes()`, `addDynamicEnumNodes()`
+6. **LinkML tools**: Command-line validation for production
+
+## Key Takeaways
+
+- **Dynamic enums** provide flexible validation using ontology hierarchies
+- **LinkML schemas** are interoperable and machine-readable
+- Use **`children`** for direct descendants, **`descendant`** for full subtrees
+- Validate early and often during data curation
+- Leverage helper functions to identify representative ontology nodes
+
+## Further Reading
+
+- [LinkML Documentation](https://linkml.io/)
+- [LinkML Schema Guide](https://linkml.io/linkml/schemas/)
+- [OBO Foundry Ontologies](http://www.obofoundry.org/)
+
+---
+
+# Session Info
+
+```{r session_info}
+sessionInfo()
+```
