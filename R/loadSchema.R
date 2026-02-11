@@ -256,13 +256,22 @@ get_all_categories <- function(schema) {
     }
     
     # Validate individual key values against enum if present
-    if (!is.null(key_schema$validation$pattern)) {
+    if (!is.null(key_schema$validation$allowed_values)) {
+      allowed_keys <- key_schema$validation$allowed_values
+      invalid_keys <- key_values[!key_values %in% allowed_keys]
+      if (length(invalid_keys) > 0) {
+        warnings <- c(warnings,
+          paste0("Row ", row_idx, ": '", key_field, "' has invalid values: ",
+                 paste(invalid_keys, collapse = ", "),
+                 ". Allowed values: ", paste(allowed_keys, collapse = ", ")))
+      }
+    } else if (!is.null(key_schema$validation$pattern)) {
       pattern <- key_schema$validation$pattern
       if (grepl("\\|", pattern)) {
         # This is a static enum
         allowed_keys <- strsplit(pattern, "\\|")[[1]]
         allowed_keys <- trimws(allowed_keys)
-        
+
         invalid_keys <- key_values[!key_values %in% allowed_keys]
         if (length(invalid_keys) > 0) {
           warnings <- c(warnings,
@@ -609,6 +618,8 @@ validate_data_against_schema <- function(data, schema,
     }
   }
   
+  validation_results$has_warnings <- length(validation_results$warnings) > 0
+
   return(validation_results)
 }
 
