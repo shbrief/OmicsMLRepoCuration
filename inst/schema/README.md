@@ -5,8 +5,7 @@ This directory contains the metadata schema definitions for the OmicsMLRepoCurat
 ## Files
 
 ### Source of Truth
-- **`cmd_data_dictionary.csv`** - Master data dictionary. Edit should be done 
-only in the Google Sheet.
+- **`cmd_data_dictionary.csv`** - Master data dictionary. 
 
 ### Generated Schema Files
 - **`cmd_schema.yaml`** - Custom YAML schema format (generated from CSV)
