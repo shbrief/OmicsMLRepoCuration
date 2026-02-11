@@ -34,7 +34,7 @@
         
         tryCatch({
             ## Get Term object and extract JSON tree link
-            cur_trm <- rols::olsTerm(ontob, terms[i])
+            cur_trm <- olsTerm(ontob, terms[i])
             jstree <- cur_trm@links$jstree$href
             
         }, error = function(e) {
