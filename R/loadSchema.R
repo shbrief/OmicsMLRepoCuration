@@ -383,7 +383,16 @@ validate_data_against_schema <- function(data, schema,
       paste("Missing required fields:", paste(missing_required, collapse = ", "))
     )
   }
-  
+
+  # Check for columns not covered by schema
+  extra_cols <- setdiff(colnames(data), names(schema))
+  if (length(extra_cols) > 0) {
+    validation_results$warnings <- c(
+      validation_results$warnings,
+      paste("Columns not covered by schema:", paste(extra_cols, collapse = ", "))
+    )
+  }
+
   # Check data types for each field
   for (col in colnames(data)) {
     if (col %in% names(schema)) {
