@@ -404,6 +404,47 @@ if (length(result$warnings) == 0) {
 }
 ```
 
+## Non-Covered Attributes
+
+When your input data contains columns that are not defined in the schema, the validator flags them as warnings. This helps identify typos in column names or custom columns that may need to be added to the schema.
+
+### Example 11: Columns Not in Schema
+
+```{r non-covered-columns}
+# Data with extra columns not defined in the schema
+extra_cols_data <- data.frame(
+  `Sample Source ID` = c("S001", "S002"),
+  subject_id = c("SUB001", "SUB002"),
+  body_site = c("feces", "feces"),
+  control = c("Case", "Case"),
+  median_read_length = c(150, 150),
+  minimum_read_length = c(100, 100),
+  number_bases = c(1500000, 1600000),
+  number_reads = c(10000, 11000),
+  sequencing_platform = c("IlluminaMiSeq", "IlluminaHiSeq"),
+  target_condition = c("Type 2 diabetes mellitus", "Colorectal cancer"),
+  # Columns NOT in the schema:
+  custom_score = c(0.95, 0.87),
+  lab_technician = c("Alice", "Bob"),
+  batch_number = c(1, 2),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+
+result <- validate_data_against_schema(extra_cols_data, schema)
+
+cat("Validation result:", result$valid, "\n\n")
+
+if (length(result$warnings) > 0) {
+  cat("Warnings:\n")
+  for (warning in result$warnings) {
+    cat("  -", warning, "\n")
+  }
+}
+```
+
+This is useful for catching column name typos (e.g., `body_Site` instead of `body_site`) and for identifying columns that may need to be standardized or removed before submission.
+
 ## Comprehensive Validation Workflow
 
 Here's a complete example of validating a full dataset:
