@@ -78,7 +78,8 @@ get_field_definition <- function(schema, field_name) {
 #'   required_fields <- get_required_fields(schema)
 #'   print(required_fields)
 #' }
-#'
+#' 
+#' @export
 get_required_fields <- function(schema) {
   required <- c()
   for (field_name in names(schema)) {
@@ -386,6 +387,12 @@ validate_data_against_schema <- function(data, schema,
 
   # Check for columns not covered by schema
   extra_cols <- setdiff(colnames(data), names(schema))
+  # Allow {categorical_column}_ontology_term_id columns
+  categorical_cols <- names(schema)[vapply(schema, function(field_def) {
+    !is.null(field_def$validation$allowed_values) || !is.null(field_def$ontology)
+  }, logical(1))]
+  valid_ontology_id_cols <- paste0(categorical_cols, "_ontology_term_id")
+  extra_cols <- setdiff(extra_cols, valid_ontology_id_cols)
   if (length(extra_cols) > 0) {
     validation_results$warnings <- c(
       validation_results$warnings,
