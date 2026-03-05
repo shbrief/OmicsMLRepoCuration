@@ -394,8 +394,9 @@ validate_data_against_schema <- function(data, schema,
   valid_ontology_id_cols <- paste0(categorical_cols, "_ontology_term_id")
   extra_cols <- setdiff(extra_cols, valid_ontology_id_cols)
   if (length(extra_cols) > 0) {
-    validation_results$warnings <- c(
-      validation_results$warnings,
+    validation_results$valid <- FALSE
+    validation_results$errors <- c(
+      validation_results$errors,
       paste("Columns not covered by schema:", paste(extra_cols, collapse = ", "))
     )
   }
