@@ -387,9 +387,11 @@ validate_data_against_schema <- function(data, schema,
 
   # Check for columns not covered by schema
   extra_cols <- setdiff(colnames(data), names(schema))
-  # Allow {categorical_column}_ontology_term_id columns
+  # Allow {character_column}_ontology_term_id columns (all character-class fields)
   categorical_cols <- names(schema)[vapply(schema, function(field_def) {
-    !is.null(field_def$validation$allowed_values) || !is.null(field_def$ontology)
+    !is.null(field_def$validation$allowed_values) ||
+      !is.null(field_def$ontology) ||
+      identical(field_def$col_class, "character")
   }, logical(1))]
   valid_ontology_id_cols <- paste0(categorical_cols, "_ontology_term_id")
   extra_cols <- setdiff(extra_cols, valid_ontology_id_cols)
