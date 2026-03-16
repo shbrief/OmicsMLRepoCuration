@@ -426,10 +426,24 @@ validate_data_against_schema <- function(data, schema,
           
           # For numeric types, try coercing and check if conversion is successful
           if (expected_class %in% c("integer", "numeric", "double")) {
+            values_to_check <- non_wildcard_values
+            # If field supports multiple values with a delimiter, split before
+            # type-checking so that "1.5;2.3" is not mistakenly flagged as
+            # non-numeric (the individual tokens after splitting are numeric).
+            if (!is.null(field_def$multiple_values) && isTRUE(field_def$multiple_values) &&
+                !is.null(field_def$validation$delimiter)) {
+              delim <- field_def$validation$delimiter
+              values_to_check <- unlist(strsplit(non_wildcard_values, delim, fixed = TRUE))
+              values_to_check <- trimws(values_to_check)
+              values_to_check <- values_to_check[nzchar(values_to_check)]
+              if (!is.null(wildcard_values) && length(wildcard_values) > 0) {
+                values_to_check <- values_to_check[!values_to_check %in% wildcard_values]
+              }
+            }
             # Try to coerce to numeric
-            coerced <- suppressWarnings(as.numeric(non_wildcard_values))
+            coerced <- suppressWarnings(as.numeric(values_to_check))
             # Valid if all non-wildcard values can be coerced (no NAs introduced)
-            type_valid <- all(!is.na(coerced))
+            type_valid <- length(values_to_check) == 0L || all(!is.na(coerced))
           } else if (expected_class == "character") {
             # For character type, values can always be coerced to character
             type_valid <- TRUE
