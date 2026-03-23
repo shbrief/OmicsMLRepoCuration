@@ -1,0 +1,11 @@
+curator,family,antibiotics_current_use,feces_phenotype_value,lifestyle,neonatal_feeding_method,sequencing_platform,disease,country,target_condition,pmid,number_reads,neonatal_birth_weight,study_name,subject_id,Sample Source ID,control,smoker,sex
+Jane Doe,Family One,Yes,2.844,Hunter-gatherer,Mixed Feeding,IonProton,Cystic Fibrosis,Andorra,Cystic Fibrosis,1234567,120,9,Thomson_2018,s1,ss1,Study Control,Smoker (finding),Female
+John_Doe,1,no,type 1,Hunter_gatherer,Mixed Feeding|No Breastfeeding,IonProton;IlluminaNovaSeq,autoimmune thrombocytopenia,andorra,autoimmune thrombocytopenia,01234567,120,9.3,Thompson_2017b,subject1,sample1,Case,Smoker,Male
+Jane Doe;John Doe,one,y,2.844,pastoralist,Mixed Feeding;No Breastfeeding,illumina,intestinal polyp,Belize,intestinal polyp,123456,36.5,9.33,walsh2016,subject_,sample_,Not Used,Non-smoker (finding);Ex-smoker(finding),Female;Male
+Jane Doe|John Doe,33,1,17,Pastoralist,exclusively_breastfeeding,IlluminaHiSeq,Colorectal Carcinoma,Andorra;Belize,Colorectal Carcinoma,77777777,88888844,19.3,Johnson_3344_Helms,44,14,NA,never smoked,F
+13,family B,2,1,Fisher|Pastoralist,formula,Illumina Hi Seq,Cystic Fibrosis;Colorectal Carcinoma,Colorectal Carcinoma,Cystic Fibrosis;Colorectal Carcinoma,22222222;33333333,0,9.9,Johnson_3344_Helms_2299,abcdefg,sample1,NA,(finding),M
+Adam Bradley,thirteen,TRUE,3<;>4,Farmer,mixed feeding,ionproton,autoimmune thrombocytopenia;intestinal polyp,Turkmenistan,autoimmune thrombocytopenia;intestinal polyp,3,NA,0.81,Walsh_2016_Helms2299,Subject_2,Sample_2,Case;Not Used,0,female
+CathleenDesmond,f_13,TRUE,one,Agropastoralist,Mixed Feeding;Mixed Feeding,IlluminaNovaSeq,Cystic Fibrosis;intestinal polyp,Western Sahara,Cystic Fibrosis;intestinal polyp,NA,NA,9,walsh_2016,subject*ls;f,sample*ls;f,study_control,1,male
+0.3335,12,F,1.1,Agriculturalist,Exclusively Formula Feeding,NA,Malignant Myoepithelial Cell,Yemen,Malignant Myoepithelial Cell,NA,333;29,7.11111,Thomson2018,1,1,case,Smoker;Ex-smoker,f
+Fogsworthy,12,FALSE,12.8,fisher,No Breastfeeding,sequencing platform,burn,turkmenistan,burn,76543210,1,123890,helms2299,NA,NA,not_used,NA,m
+Gina Hart,twenty-two,t|f,2222.2222,Fisher,no breastfeeding,none,Africa,NA,Africa,7654321,three,3.99,Johnson_2233_9,NA,NA,study control,NA,1
