@@ -13,8 +13,9 @@
 
 \item{field_def}{The field definition from the schema (for the delimiter).}
 
-\item{term_set}{One element of \code{\link{.load_bundled_ontology_terms}}
-output (a list with \code{labels} and \code{synonym_lookup}), or NULL.}
+\item{term_set}{One element of the \code{ontology_terms} list supplied to
+\code{\link{validate_data_against_schema}} (a list with \code{labels} and
+\code{synonym_lookup}), or NULL.}
 
 \item{wildcard_values}{Character vector of always-allowed values to skip.}
 }
@@ -24,11 +25,17 @@ A character vector of warning messages. Empty when \code{term_set} is
 }
 \description{
 Internal helper that classifies each value of a dynamic_enum field against a
-precomputed set of ontology terms. Values equal to a preferred label pass
-silently; values that are a recognized ontology synonym produce a warning
-asking the curator to use the preferred label; any other value produces an
-"unrecognized term" warning. Multi-valued cells are split on the field's
-delimiter and each token is classified independently. All findings are
-warnings (never errors), consistent with the other enum/pattern branches.
+precomputed set of ontology terms. Values equal to a preferred ontology label
+pass silently. Any other value is flagged with a warning: a value that is a
+recognized ontology synonym is reported as "a recognized ontology synonym,
+not the preferred label", and anything else as "not a recognized term".
+}
+\details{
+The warning deliberately does NOT name a specific preferred label, because a
+short synonym can be shared by several ontology terms (e.g. "RA" is a synonym
+of both \emph{Refractory Anemia} and \emph{Rheumatoid Arthritis}), so naming
+one would often be wrong. Multi-valued cells are split on the field's
+delimiter and each distinct token is reported once with its occurrence count,
+rather than once per row. All findings are warnings (never errors).
 }
 \keyword{internal}

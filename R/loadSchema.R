@@ -308,32 +308,6 @@ get_all_categories <- function(schema) {
   return(warnings)
 }
 
-#' Load bundled ontology terms for dynamic_enum validation
-#'
-#' Internal helper that reads the precomputed ontology preferred-labels and
-#' synonyms shipped with the package (\code{inst/extdata/cmd_ontology_terms.rds},
-#' generated offline by \code{inst/scripts/make_ontology_terms.R}). The resource
-#' lets \code{\link{validate_data_against_schema}} validate ontology-backed
-#' (dynamic_enum) fields without any network/ontology access at validation time.
-#' It is a compressed \code{.rds} (not a CSV) because the raw term/synonym table
-#' is tens of MB for broad ontology roots such as \code{disease}.
-#'
-#' @return A named list keyed by field name. Each element is a list with
-#'   \code{labels} (character vector of unique preferred labels) and
-#'   \code{synonym_lookup} (named character vector mapping each ontology synonym
-#'   to its preferred label). Returns an empty list when the bundled resource is
-#'   absent, so older installs degrade gracefully.
-#'
-#' @keywords internal
-.load_bundled_ontology_terms <- function() {
-  f <- system.file("extdata", "cmd_ontology_terms.rds",
-                   package = "OmicsMLRepoCuration")
-  if (!nzchar(f) || !file.exists(f)) return(list())
-  terms <- readRDS(f)
-  if (!is.list(terms)) return(list())
-  terms
-}
-
 #' Validate values of an ontology-backed (dynamic_enum) field
 #'
 #' Internal helper that classifies each value of a dynamic_enum field against a
@@ -352,8 +326,9 @@ get_all_categories <- function(schema) {
 #' @param col_name Character; the field/column name (used in messages).
 #' @param values The column's values (a vector from the data frame).
 #' @param field_def The field definition from the schema (for the delimiter).
-#' @param term_set One element of \code{\link{.load_bundled_ontology_terms}}
-#'   output (a list with \code{labels} and \code{synonym_lookup}), or NULL.
+#' @param term_set One element of the \code{ontology_terms} list supplied to
+#'   \code{\link{validate_data_against_schema}} (a list with \code{labels} and
+#'   \code{synonym_lookup}), or NULL.
 #' @param wildcard_values Character vector of always-allowed values to skip.
 #'
 #' @return A character vector of warning messages. Empty when \code{term_set} is
@@ -468,10 +443,14 @@ get_all_categories <- function(schema) {
 #'   regardless of their validation rules. Default is c("Not applicable", "Not reported").
 #'   Set to NULL to disable wildcard matching.
 #' @param ontology_terms A named list (keyed by field name) of precomputed
-#'   ontology terms used to validate ontology-backed (dynamic_enum) fields, in
-#'   the format returned by \code{.load_bundled_ontology_terms}. Default is NULL,
-#'   in which case the bundled resource shipped with the package is loaded
-#'   automatically. Fields absent from this list are not enum-validated.
+#'   ontology terms used to validate ontology-backed (dynamic_enum) fields. Each
+#'   element is a list with \code{labels} (character vector of allowed preferred
+#'   labels) and \code{synonym_lookup} (named character vector mapping each
+#'   ontology synonym to its preferred label). This is project-specific data: the
+#'   calling project is responsible for generating and supplying it (see, e.g.,
+#'   the curatedMetagenomicDataCuration package's bundled resource). Default is
+#'   NULL, in which case dynamic_enum fields are not enum-validated. Fields absent
+#'   from this list are likewise not enum-validated.
 #'
 #' @export
 validate_data_against_schema <- function(data, schema,
@@ -483,11 +462,13 @@ validate_data_against_schema <- function(data, schema,
     warnings = c()
   )
 
-  # Load bundled ontology terms once (offline) for dynamic_enum validation.
+  # ontology_terms is project-specific and supplied by the caller. When absent,
+  # dynamic_enum fields are simply not enum-validated (no bundled default here:
+  # this package is generic validation infrastructure).
   if (is.null(ontology_terms)) {
-    ontology_terms <- .load_bundled_ontology_terms()
+    ontology_terms <- list()
   }
-  
+
   # Check required fields
   required_fields <- get_required_fields(schema)
   missing_required <- setdiff(required_fields, colnames(data))

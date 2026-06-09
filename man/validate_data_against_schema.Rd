@@ -21,10 +21,14 @@ regardless of their validation rules. Default is c("Not applicable", "Not report
 Set to NULL to disable wildcard matching.}
 
 \item{ontology_terms}{A named list (keyed by field name) of precomputed
-ontology terms used to validate ontology-backed (dynamic_enum) fields, in
-the format returned by \code{.load_bundled_ontology_terms}. Default is NULL,
-in which case the bundled resource shipped with the package is loaded
-automatically. Fields absent from this list are not enum-validated.}
+ontology terms used to validate ontology-backed (dynamic_enum) fields. Each
+element is a list with \code{labels} (character vector of allowed preferred
+labels) and \code{synonym_lookup} (named character vector mapping each
+ontology synonym to its preferred label). This is project-specific data: the
+calling project is responsible for generating and supplying it (see, e.g.,
+the curatedMetagenomicDataCuration package's bundled resource). Default is
+NULL, in which case dynamic_enum fields are not enum-validated. Fields absent
+from this list are likewise not enum-validated.}
 }
 \value{
 A list with three components:
