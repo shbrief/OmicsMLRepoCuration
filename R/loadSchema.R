@@ -308,6 +308,109 @@ get_all_categories <- function(schema) {
   return(warnings)
 }
 
+#' Load bundled ontology terms for dynamic_enum validation
+#'
+#' Internal helper that reads the precomputed ontology preferred-labels and
+#' synonyms shipped with the package (\code{inst/extdata/cmd_ontology_terms.rds},
+#' generated offline by \code{inst/scripts/make_ontology_terms.R}). The resource
+#' lets \code{\link{validate_data_against_schema}} validate ontology-backed
+#' (dynamic_enum) fields without any network/ontology access at validation time.
+#' It is a compressed \code{.rds} (not a CSV) because the raw term/synonym table
+#' is tens of MB for broad ontology roots such as \code{disease}.
+#'
+#' @return A named list keyed by field name. Each element is a list with
+#'   \code{labels} (character vector of unique preferred labels) and
+#'   \code{synonym_lookup} (named character vector mapping each ontology synonym
+#'   to its preferred label). Returns an empty list when the bundled resource is
+#'   absent, so older installs degrade gracefully.
+#'
+#' @keywords internal
+.load_bundled_ontology_terms <- function() {
+  f <- system.file("extdata", "cmd_ontology_terms.rds",
+                   package = "OmicsMLRepoCuration")
+  if (!nzchar(f) || !file.exists(f)) return(list())
+  terms <- readRDS(f)
+  if (!is.list(terms)) return(list())
+  terms
+}
+
+#' Validate values of an ontology-backed (dynamic_enum) field
+#'
+#' Internal helper that classifies each value of a dynamic_enum field against a
+#' precomputed set of ontology terms. Values equal to a preferred ontology label
+#' pass silently. Any other value is flagged with a warning: a value that is a
+#' recognized ontology synonym is reported as "a recognized ontology synonym,
+#' not the preferred label", and anything else as "not a recognized term".
+#'
+#' The warning deliberately does NOT name a specific preferred label, because a
+#' short synonym can be shared by several ontology terms (e.g. "RA" is a synonym
+#' of both \emph{Refractory Anemia} and \emph{Rheumatoid Arthritis}), so naming
+#' one would often be wrong. Multi-valued cells are split on the field's
+#' delimiter and each distinct token is reported once with its occurrence count,
+#' rather than once per row. All findings are warnings (never errors).
+#'
+#' @param col_name Character; the field/column name (used in messages).
+#' @param values The column's values (a vector from the data frame).
+#' @param field_def The field definition from the schema (for the delimiter).
+#' @param term_set One element of \code{\link{.load_bundled_ontology_terms}}
+#'   output (a list with \code{labels} and \code{synonym_lookup}), or NULL.
+#' @param wildcard_values Character vector of always-allowed values to skip.
+#'
+#' @return A character vector of warning messages. Empty when \code{term_set} is
+#'   NULL/empty (backward-compatible skip for fields with no bundled terms).
+#'
+#' @keywords internal
+.validate_dynamic_enum <- function(col_name, values, field_def, term_set,
+                                   wildcard_values) {
+  warnings <- c()
+  if (is.null(term_set) || length(term_set$labels) == 0) return(warnings)
+
+  labels <- term_set$labels
+  synonyms <- names(term_set$synonym_lookup)
+  delimiter <- field_def$validation$delimiter
+
+  non_na <- values[!is.na(values)]
+  if (length(non_na) == 0) return(warnings)
+
+  # Tokenize all cells (split multi-valued cells on the delimiter; single-valued
+  # fields treat each cell as one token).
+  tokens <- if (!is.null(delimiter)) {
+    unlist(strsplit(non_na, delimiter, fixed = TRUE))
+  } else {
+    non_na
+  }
+  tokens <- trimws(tokens)
+  tokens <- tokens[nzchar(tokens)]
+  if (!is.null(wildcard_values) && length(wildcard_values) > 0) {
+    tokens <- tokens[!tokens %in% wildcard_values]
+  }
+  if (length(tokens) == 0) return(warnings)
+
+  # Report each distinct non-preferred token once, with its occurrence count.
+  tok_counts <- table(tokens)
+  bad <- names(tok_counts)[!names(tok_counts) %in% labels]
+  for (tok in bad) {
+    n <- as.integer(tok_counts[[tok]])
+    rows_txt <- paste0("(", n, " row", if (n > 1L) "s" else "", ")")
+    if (tok %in% synonyms) {
+      warnings <- c(
+        warnings,
+        paste0("Field '", col_name, "': '", tok,
+               "' is a recognized ontology synonym, not the preferred label; ",
+               "replace it with the full preferred term ", rows_txt, ".")
+      )
+    } else {
+      warnings <- c(
+        warnings,
+        paste0("Field '", col_name, "': '", tok,
+               "' is not a recognized term for this ontology-backed field ",
+               rows_txt, ".")
+      )
+    }
+  }
+  warnings
+}
+
 #' Validate data against schema
 #'
 #' Performs comprehensive validation of a data frame against a schema, checking
@@ -364,15 +467,26 @@ get_all_categories <- function(schema) {
 #' @param wildcard_values A character vector of values that are allowed for all fields
 #'   regardless of their validation rules. Default is c("Not applicable", "Not reported").
 #'   Set to NULL to disable wildcard matching.
+#' @param ontology_terms A named list (keyed by field name) of precomputed
+#'   ontology terms used to validate ontology-backed (dynamic_enum) fields, in
+#'   the format returned by \code{.load_bundled_ontology_terms}. Default is NULL,
+#'   in which case the bundled resource shipped with the package is loaded
+#'   automatically. Fields absent from this list are not enum-validated.
 #'
 #' @export
-validate_data_against_schema <- function(data, schema, 
-                                          wildcard_values = c("Not applicable", "Not reported")) {
+validate_data_against_schema <- function(data, schema,
+                                          wildcard_values = c("Not applicable", "Not reported"),
+                                          ontology_terms = NULL) {
   validation_results <- list(
     valid = TRUE,
     errors = c(),
     warnings = c()
   )
+
+  # Load bundled ontology terms once (offline) for dynamic_enum validation.
+  if (is.null(ontology_terms)) {
+    ontology_terms <- .load_bundled_ontology_terms()
+  }
   
   # Check required fields
   required_fields <- get_required_fields(schema)
@@ -472,6 +586,8 @@ validate_data_against_schema <- function(data, schema,
       has_delimiter <- !is.null(field_def$validation$delimiter)
       has_pattern <- !is.null(field_def$validation$pattern)
       has_allowed_values <- !is.null(field_def$validation$allowed_values)
+      has_ontology <- !is.null(field_def$ontology) &&
+        !is.null(field_def$ontology$roots)
       
       if (has_multiple_values && has_delimiter && has_allowed_values) {
         # Field has multiple values with delimiter and allowed values list (enum)
@@ -604,16 +720,28 @@ validate_data_against_schema <- function(data, schema,
             if (any(invalid)) {
               validation_results$warnings <- c(
                 validation_results$warnings,
-                paste0("Field '", col, "' has ", sum(invalid), 
+                paste0("Field '", col, "' has ", sum(invalid),
                        " values not matching pattern:  ", pattern)
               )
             }
           }
         }
       }
+
+      # Validation for ontology-backed (dynamic_enum) fields. This is additive
+      # (not part of the if/else-if ladder above) so a field that also carries a
+      # static enum (e.g. treatment is "dynamic_enum;static_enum") still gets its
+      # static check AND ontology preferred-label/synonym checking.
+      if (has_ontology) {
+        validation_results$warnings <- c(
+          validation_results$warnings,
+          .validate_dynamic_enum(col, data[[col]], field_def,
+                                 ontology_terms[[col]], wildcard_values)
+        )
+      }
     }
   }
-  
+
   # Check for combined field validations
   # Define field pairs that need combined validation
   combined_validations <- list(

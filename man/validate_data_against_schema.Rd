@@ -7,7 +7,8 @@
 validate_data_against_schema(
   data,
   schema,
-  wildcard_values = c("Not applicable", "Not reported")
+  wildcard_values = c("Not applicable", "Not reported"),
+  ontology_terms = NULL
 )
 }
 \arguments{
@@ -18,6 +19,12 @@ validate_data_against_schema(
 \item{wildcard_values}{A character vector of values that are allowed for all fields
 regardless of their validation rules. Default is c("Not applicable", "Not reported").
 Set to NULL to disable wildcard matching.}
+
+\item{ontology_terms}{A named list (keyed by field name) of precomputed
+ontology terms used to validate ontology-backed (dynamic_enum) fields, in
+the format returned by \code{.load_bundled_ontology_terms}. Default is NULL,
+in which case the bundled resource shipped with the package is loaded
+automatically. Fields absent from this list are not enum-validated.}
 }
 \value{
 A list with three components:
