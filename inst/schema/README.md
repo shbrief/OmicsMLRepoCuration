@@ -95,7 +95,7 @@ source("R/loadSchema.R")
 dict <- read.csv("inst/schema/cmd_data_dictionary.csv", stringsAsFactors = FALSE)
 
 # Generate YAML schema
-table_to_yaml_schema(
+tableToYamlSchema(
   dict,
   schema_version = "1.2.0",
   schema_name = "curatedMetagenomicData_metadata_schema",
@@ -104,7 +104,7 @@ table_to_yaml_schema(
 )
 
 # Generate LinkML schema
-table_to_linkml_schema(
+tableToLinkmlSchema(
   dict,
   schema_id = "https://github.com/waldronlab/curatedMetagenomicData",
   schema_version = "1.2.0",
@@ -168,10 +168,10 @@ print(f'  Enums: {len(schema.all_enums())}')
 
 ```r
 # Load schema
-schema <- load_metadata_schema("inst/schema/cmd_schema.yaml")
+schema <- loadMetadataSchema("inst/schema/cmd_schema.yaml")
 
 # Validate data
-result <- validate_data_against_schema(your_data, schema)
+result <- validateDataAgainstSchema(your_data, schema)
 
 # Check results
 if (!result$valid) {
@@ -196,7 +196,7 @@ data <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(data, schema)
+result <- validateDataAgainstSchema(data, schema)
 # This will pass validation
 
 # Invalid paired data - count mismatch
@@ -206,7 +206,7 @@ data_invalid <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(data_invalid, schema)
+result <- validateDataAgainstSchema(data_invalid, schema)
 # This will show warning about count mismatch
 ```
 

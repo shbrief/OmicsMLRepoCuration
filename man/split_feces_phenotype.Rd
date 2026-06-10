@@ -38,3 +38,4 @@ data_split <- split_feces_phenotype(data, keep_original = TRUE)
 }
 
 }
+\keyword{internal}

@@ -1,0 +1,119 @@
+#' Synchronize Google Sheets Schema to Local Files
+#'
+#' @description
+#' Downloads a data dictionary from Google Sheets and converts it to multiple
+#' schema formats (CSV, YAML, and LinkML). This function synchronizes a remote
+#' Google Sheets data dictionary with local schema files in various formats.
+#'
+#' @param url A character string specifying the Google Sheets URL. 
+#'   Default is the cMD data dictionary spreadsheet.
+#' @param schema_dir A character string specifying the directory path where 
+#'   schema files will be written. This parameter is required.
+#' @param schema_version A character string specifying the version number for 
+#'   the LinkML schema. Default is "" (empty string).
+#' @param sheet_name A character string specifying the name of the sheet to 
+#'   read from the Google Sheets document. Default is "cMD_data_dictionary".
+#' @param csv_filename A character string specifying the output CSV filename. 
+#'   Default is "cmd_data_dictionary.csv".
+#' @param yaml_filename A character string specifying the output YAML filename. 
+#'   Default is "cmd_data_dictionary.yaml".
+#' @param linkml_filename A character string specifying the output LinkML YAML 
+#'   filename. Default is "cmd_data_dictionary_linkml.yaml".
+#'
+#' @return 
+#' Invisibly returns a data.frame containing the data dictionary read from 
+#' Google Sheets. The function is primarily called for its side effects of 
+#' writing schema files to disk.
+#'
+#' @details
+#' This function performs three main operations:
+#' \enumerate{
+#'   \item Reads the data dictionary from Google Sheets
+#'   \item Writes the data dictionary to a CSV file
+#'   \item Converts the data dictionary to YAML and LinkML formats
+#' }
+#'
+#' The function requires authentication with Google Sheets and Google Drive.
+#' Ensure that \code{googlesheets4} and \code{googledrive} are properly 
+#' authenticated before calling this function.
+#'
+#' @note
+#' This function depends on the following packages:
+#' \itemize{
+#'   \item \code{googledrive} - for Google Drive authentication
+#'   \item \code{googlesheets4} - for reading Google Sheets
+#' }
+#'
+#' It also requires the following custom functions to be available:
+#' \itemize{
+#'   \item \code{tableToYamlSchema} - converts data.frame to YAML schema
+#'   \item \code{tableToLinkmlSchema} - converts data.frame to LinkML schema
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # Basic usage with default Google Sheets URL
+#' syncSchema(schema_dir = "./schemas")
+#'
+#' # Custom schema version
+#' syncSchema(
+#'   schema_dir = "./schemas",
+#'   schema_version = "0.0.12"
+#' )
+#'
+#' # Custom Google Sheets URL and sheet name
+#' syncSchema(
+#'   url = "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit",
+#'   schema_dir = "./schemas",
+#'   sheet_name = "my_data_dictionary"
+#' )
+#'
+#' # Capture the data dictionary for inspection
+#' dd <- syncSchema(schema_dir = "./schemas")
+#' head(dd)
+#' }
+#'
+#' @seealso
+#' \code{\link[googlesheets4]{read_sheet}} for reading Google Sheets
+#' \code{\link[googledrive]{as_id}} for converting URLs to Google Drive IDs
+#'
+#' @export
+#'
+syncSchema <- function(url = "https://docs.google.com/spreadsheets/d/1KK-rayNsxcYG45ToBPT5_HWLxoOpbCLZlbbZ-Y72fRc/edit?usp=sharing",
+                       schema_dir,
+                       schema_version = "",
+                       sheet_name = "cmd",
+                       csv_filename = "cmd_schema.csv",
+                       yaml_filename = "cmd_schema.yaml",
+                       linkml_filename = "cmd_schema_linkml.yaml") {
+
+    # Google integration is optional; these packages live in Suggests
+    for (pkg in c("googledrive", "googlesheets4")) {
+        if (!requireNamespace(pkg, quietly = TRUE)) {
+            stop("Package '", pkg, "' is required for syncSchema(). ",
+                 "Install it with install.packages('", pkg, "').",
+                 call. = FALSE)
+        }
+    }
+
+    # Convert URL to Google Sheets ID
+    ss <- googledrive::as_id(url)
+    
+    # Sync Google Drive to local copy
+    dd <- googlesheets4::read_sheet(ss = ss, sheet = sheet_name)
+    
+    # Write to CSV
+    write.csv(dd, file.path(schema_dir, csv_filename), row.names = FALSE)
+    
+    # Convert CSV to YAML
+    tableToYamlSchema(dd, 
+                         output_file = file.path(schema_dir, yaml_filename))
+    
+    # Convert CSV to LinkML
+    tableToLinkmlSchema(dd, 
+                           schema_version = schema_version,
+                           output_file = file.path(schema_dir, linkml_filename))
+    
+    # Return the data dictionary invisibly for optional use
+    invisible(dd)
+}

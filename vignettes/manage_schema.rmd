@@ -1,0 +1,107 @@
+---
+title: "Managing metadata schema"
+author: "Sehyun Oh"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+vignette: >
+  %\VignetteIndexEntry{Manage Schema}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+output:
+  BiocStyle::html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(comment = "#>", 
+                      collapse = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE)
+```
+
+# Setup
+```{r setup, eval=FALSE}
+## Install package
+devtools::document("~/OmicsMLRepo/OmicsMLRepoCuration")
+install.packages("~/OmicsMLRepo/OmicsMLRepoCuration", repos = NULL, type="source")
+```
+
+```{r}
+library(OmicsMLRepoCuration)
+```
+
+```{r}
+## Setup directory
+schema_dir <- "~/OmicsMLRepo/OmicsMLRepoCuration/inst/schema"
+```
+
+
+# Compare official vs. local versions
+```{r}
+## Cloud copy (i.e., my local work)
+url <- "https://docs.google.com/spreadsheets/d/1KK-rayNsxcYG45ToBPT5_HWLxoOpbCLZlbbZ-Y72fRc/edit?usp=sharing"
+ss <- googledrive::as_id(url)
+dd <- googlesheets4::read_sheet(ss = ss, sheet = "cmd")
+
+## Official copy
+cmd <- readr::read_csv("~/Microbiome/curatedMetagenomicDataCuration/inst/extdata/cmd_data_dictionary.csv")
+cmd <- cmd[order(cmd$col.name),]
+```
+
+
+```{r}
+print(paste("Are they identical?:", identical(dd, cmd)))
+
+library(diffdf)
+diffdf(dd, cmd) # 'BASE' is the local work (my version in Google Sheet), 'COMP' is the official version in cMDC
+```
+
+
+# Sync
+## Local (Google Sheet) --> Official (cMDCuration GH)
+If your local work is done in Google Sheet
+```{r cloud_to_local, eval=FALSE}
+write.csv(dd, file.path(schema_dir, "cmd_data_dictionary.csv"), row.names = FALSE)
+write.csv(dd, "~/Microbiome/curatedMetagenomicDataCuration/inst/extdata/cmd_data_dictionary.csv", row.names = FALSE)
+```
+
+```{r}
+## csv to yaml
+tableToYamlSchema(dd, 
+                     output_file = file.path(schema_dir, "cmd_data_dictionary.yaml"))
+
+## csv to linkml
+tableToLinkmlSchema(dd, 
+                       schema_version = "0.0.11",
+                       output_file = file.path(schema_dir, "cmd_data_dictionary_linkml.yaml"))
+```
+
+```{r echo=FALSE, eval=FALSE}
+## Local (Google Sheet) to GitHub sync.
+syncSchema(schema_dir = "~/OmicsMLRepo/OmicsMLRepoCuration/inst/schema",
+           schema_version = "0.0.12")
+```
+
+
+
+
+
+
+## Official (cMDCuration GH) --> Local (Google Sheet) 
+If your local work (e.g., Google Sheet) is behind the official version
+
+
+```{r gh_to_cloud, echo=FALSE, eval=FALSE}
+# ## Sync the official GitHub version to Google Drive
+# googlesheets4::write_sheet(cmd, ss = ss, sheet = "cMD_data_dictionary")
+```
+
+```{r load_yaml_schema}
+schema_file <- system.file("schema", "cmd_data_dictionary.yaml", package = "OmicsMLRepoCuration")
+schema <- loadMetadataSchema(schema_file)
+dd <- exportSchemaToCsv(schema)
+```

@@ -141,10 +141,24 @@ splitColumnBySep <- function(data,
 }
 
 
+# Helper function: Convert the literal string "NA" to a real NA_character_
+.convertNaStrings <- function(x) {
+  x[x == "NA"] <- NA_character_
+  x
+}
+
+# Helper function: Default the two output column names when not supplied
+.defaultPairColNames <- function(newColNames, targetCol) {
+  if (is.null(newColNames)) {
+    newColNames <- c(targetCol, paste0(targetCol, "_value"))
+  }
+  newColNames
+}
+
 # Helper function: Split by delimiter only (long format - multiple rows)
-.split_by_delim_long <- function(data, targetCol, delim, col_position, 
+.split_by_delim_long <- function(data, targetCol, delim, col_position,
                                  remove, convert_na) {
-  
+
   # Split values by delimiter
   split_values <- strsplit(as.character(data[[targetCol]]), delim, fixed = TRUE)
   
@@ -161,7 +175,7 @@ splitColumnBySep <- function(data,
   
   # Convert "NA" to logical NA if requested
   if (convert_na) {
-    data_expanded[[targetCol]][data_expanded[[targetCol]] == "NA"] <- NA_character_
+    data_expanded[[targetCol]] <- .convertNaStrings(data_expanded[[targetCol]])
   }
   
   return(data_expanded)
@@ -173,10 +187,8 @@ splitColumnBySep <- function(data,
                                col_position, col_values, remove, convert_na) {
   
   # Set default column names if not provided
-  if (is.null(newColNames)) {
-    newColNames <- c(targetCol, paste0(targetCol, "_value"))
-  }
-  
+  newColNames <- .defaultPairColNames(newColNames, targetCol)
+
   if (length(newColNames) != 2) {
     stop("`newColNames` must be a character vector of length 2 when only `sep` is provided")
   }
@@ -217,8 +229,8 @@ splitColumnBySep <- function(data,
   
   # Convert "NA" strings to logical NA if requested
   if (convert_na) {
-    col1_values[col1_values == "NA"] <- NA_character_
-    col2_values[col2_values == "NA"] <- NA_character_
+    col1_values <- .convertNaStrings(col1_values)
+    col2_values <- .convertNaStrings(col2_values)
   }
   
   # Create the new data frame
@@ -233,10 +245,8 @@ splitColumnBySep <- function(data,
                                      remove, convert_na) {
   
   # Set default column names if not provided
-  if (is.null(newColNames)) {
-    newColNames <- c(targetCol, paste0(targetCol, "_value"))
-  }
-  
+  newColNames <- .defaultPairColNames(newColNames, targetCol)
+
   if (length(newColNames) != 2) {
     stop("`newColNames` must be a character vector of length 2 when keep_delim=TRUE")
   }
@@ -295,8 +305,8 @@ splitColumnBySep <- function(data,
   
   # Convert "NA" strings to logical NA if requested
   if (convert_na) {
-    col1_values[col1_values == "NA"] <- NA_character_
-    col2_values[col2_values == "NA"] <- NA_character_
+    col1_values <- .convertNaStrings(col1_values)
+    col2_values <- .convertNaStrings(col2_values)
   }
   
   # Create the new data frame
@@ -369,10 +379,7 @@ splitColumnBySep <- function(data,
   
   # Convert "NA" strings to logical NA if requested
   if (convert_na) {
-    new_data_df[] <- lapply(new_data_df, function(x) {
-      x[x == "NA"] <- NA_character_
-      x
-    })
+    new_data_df[] <- lapply(new_data_df, .convertNaStrings)
   }
   
   # Combine with original data
@@ -473,7 +480,7 @@ splitColumnBySep <- function(data,
 #' @param convert_na Logical. If TRUE (default), convert character "NA" to logical NA
 #' @param expand_rows Logical. If TRUE and delim is provided, expand to multiple rows
 #' @param keep_delim Logical. If TRUE and both delim and sep provided, preserve delimiter in output
-#' @param file_sep Character(1). Field separator for reading/writing file. Default is tab "\t"
+#' @param file_sep Character(1). Field separator for reading/writing file. Default is tab (\code{"\\t"}).
 #'
 #' @return Invisibly returns the modified data frame
 #'
@@ -516,7 +523,9 @@ splitColumnBySep <- function(data,
 #' )
 #' }
 #'
-splitColumnBySep_file <- function(input_file, 
+#' @export
+#'
+splitColumnBySep_file <- function(input_file,
                                   output_file = NULL,
                                   targetCol,
                                   delim = NULL,
@@ -608,7 +617,9 @@ splitColumnBySep_file <- function(input_file,
 #' data_split <- split_feces_phenotype(data, keep_original = TRUE)
 #' }
 #'
-split_feces_phenotype <- function(data, 
+#' @keywords internal
+#'
+split_feces_phenotype <- function(data,
                                    column_name = "feces_phenotype",
                                    keep_original = FALSE) {
   
