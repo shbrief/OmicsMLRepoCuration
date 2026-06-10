@@ -29,19 +29,19 @@ library(OmicsMLRepoCuration)
 # Load a metadata schema
 schema_file <- system.file("schema", "cmd_data_dictionary.yaml",
                            package = "OmicsMLRepoCuration")
-schema <- load_metadata_schema(schema_file)
+schema <- loadMetadataSchema(schema_file)
 
 # Extract ontology prefixes from term IDs
 terms <- c("HP:0001824", "MONDO:0010200", "NCIT:C122328")
-get_ontologies(terms)
+getOntologies(terms)
 ```
 
 ## Vignettes
 
-- Introduction to dynamic enum functionality
-- LinkML validation
-- Schema management
-- Data validation against schema
+- Choosing Dynamic Enum Nodes
+- Managing metadata schema
+- Schema Validation
+- Data Validation Against Schema
 
 ## License
 
