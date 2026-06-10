@@ -1,5 +1,5 @@
 # Tests for ontology-backed (dynamic_enum) field validation in
-# validate_data_against_schema(). Ontology terms are injected explicitly via the
+# validateDataAgainstSchema(). Ontology terms are injected explicitly via the
 # `ontology_terms` argument so these tests need neither the bundled resource nor
 # network/ontology access.
 
@@ -34,14 +34,14 @@
 test_that("preferred labels pass with no enum warnings", {
     schema <- list(country = .onto_field())
     data <- data.frame(country = c("China", "Austria"), stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = .onto_terms)
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = .onto_terms)
     expect_false(any(grepl("synonym|recognized term", res$warnings)))
 })
 
 test_that("a recognized ontology synonym is flagged without naming a label", {
     schema <- list(country = .onto_field())
     data <- data.frame(country = "CHN", stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = .onto_terms)
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = .onto_terms)
     expect_true(any(grepl(
         "'CHN' is a recognized ontology synonym, not the preferred label",
         res$warnings, fixed = TRUE)))
@@ -52,7 +52,7 @@ test_that("a recognized ontology synonym is flagged without naming a label", {
 test_that("an unrecognized value warns as not a recognized term", {
     schema <- list(country = .onto_field())
     data <- data.frame(country = "Atlantis", stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = .onto_terms)
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = .onto_terms)
     expect_true(any(grepl(
         "'Atlantis' is not a recognized term", res$warnings, fixed = TRUE)))
 })
@@ -60,7 +60,7 @@ test_that("an unrecognized value warns as not a recognized term", {
 test_that("repeated bad values are reported once with an occurrence count", {
     schema <- list(country = .onto_field())
     data <- data.frame(country = rep("CHN", 5), stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = .onto_terms)
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = .onto_terms)
     chn <- grep("'CHN'", res$warnings, value = TRUE, fixed = TRUE)
     expect_length(chn, 1L)             # de-duplicated, not 5 messages
     expect_match(chn, "(5 rows)", fixed = TRUE)
@@ -69,7 +69,7 @@ test_that("repeated bad values are reported once with an occurrence count", {
 test_that("multi-valued cells split on the delimiter and flag only bad tokens", {
     schema <- list(disease = .onto_field(delimiter = ";"))
     data <- data.frame(disease = "adenoma;Bogusoma", stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = .onto_terms)
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = .onto_terms)
     expect_true(any(grepl("'Bogusoma' is not a recognized term",
                           res$warnings, fixed = TRUE)))
     expect_false(any(grepl("'adenoma'", res$warnings, fixed = TRUE)))
@@ -79,14 +79,14 @@ test_that("wildcard values are skipped", {
     schema <- list(country = .onto_field())
     data <- data.frame(country = c("Not reported", "Not applicable"),
                        stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = .onto_terms)
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = .onto_terms)
     expect_false(any(grepl("synonym|recognized term", res$warnings)))
 })
 
 test_that("fields absent from ontology_terms are not enum-validated", {
     schema <- list(country = .onto_field())
     data <- data.frame(country = "CHN", stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = list())
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = list())
     expect_false(any(grepl("synonym|recognized term", res$warnings)))
 })
 
@@ -95,13 +95,13 @@ test_that("a static.enum term merged into the set passes; its synonym is flagged
     # "Healthy" is a static term (not an NCIT:C7057 descendant) merged into the
     # field's label set, so it must pass silently alongside a dynamic term.
     data <- data.frame(disease = "Healthy;adenoma", stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = .onto_terms)
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = .onto_terms)
     expect_false(any(grepl("'Healthy'", res$warnings, fixed = TRUE)))
     expect_false(any(grepl("'adenoma'", res$warnings, fixed = TRUE)))
 
     # A synonym of the static term is still flagged as a synonym.
     data2 <- data.frame(disease = "Well", stringsAsFactors = FALSE)
-    res2 <- validate_data_against_schema(data2, schema, ontology_terms = .onto_terms)
+    res2 <- validateDataAgainstSchema(data2, schema, ontology_terms = .onto_terms)
     expect_true(any(grepl(
         "'Well' is a recognized ontology synonym, not the preferred label",
         res2$warnings, fixed = TRUE)))
@@ -120,7 +120,7 @@ test_that("dynamic_enum + static_enum fields get both checks (e.g. treatment)", 
         synonym_lookup = c("ASA" = "aspirin")
     ))
     data <- data.frame(treatment = "ASA", stringsAsFactors = FALSE)
-    res <- validate_data_against_schema(data, schema, ontology_terms = onto)
+    res <- validateDataAgainstSchema(data, schema, ontology_terms = onto)
     # Static-enum branch: "ASA" is not in allowed_values.
     expect_true(any(grepl("Allowed values", res$warnings, fixed = TRUE)))
     # Dynamic-enum branch: "ASA" is flagged as a recognized synonym.

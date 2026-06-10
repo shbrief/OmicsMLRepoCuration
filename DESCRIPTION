@@ -44,6 +44,8 @@ RoxygenNote: 7.3.3
 Suggests:
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    googledrive,
+    googlesheets4
 biocViews: Annotation, Metadata
 VignetteBuilder: knitr

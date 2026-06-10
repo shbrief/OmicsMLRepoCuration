@@ -52,7 +52,7 @@ First, load the YAML schema file:
 # Load the YAML schema
 schema_file <- system.file("schema", "cmd_schema.yaml", 
                           package = "OmicsMLRepoCuration")
-schema <- load_metadata_schema(schema_file)
+schema <- loadMetadataSchema(schema_file)
 
 # Display schema metadata
 cat("Schema Name:", schema$schema_info$name, "\n")
@@ -86,7 +86,7 @@ valid_data <- data.frame(
 )
 
 # Validate
-validation_results <- validate_data_against_schema(valid_data, schema)
+validation_results <- validateDataAgainstSchema(valid_data, schema)
 
 # Display results
 cat("Validation Status:", validation_results$valid, "\n")
@@ -121,7 +121,7 @@ invalid_data_missing <- data.frame(
 )
 
 # Validate
-validation_results_missing <- validate_data_against_schema(invalid_data_missing, schema)
+validation_results_missing <- validateDataAgainstSchema(invalid_data_missing, schema)
 
 # Display results
 cat("Validation Status:", validation_results_missing$valid, "\n\n")
@@ -154,7 +154,7 @@ invalid_data_types <- data.frame(
 )
 
 # Validate
-validation_results_types <- validate_data_against_schema(invalid_data_types, schema)
+validation_results_types <- validateDataAgainstSchema(invalid_data_types, schema)
 
 # Display warnings
 if (length(validation_results_types$warnings) > 0) {
@@ -175,7 +175,7 @@ Some fields have predefined allowed values. Let's check the `age_group` field:
 
 ```{r static_enum_info}
 # Get field definition for age_group
-age_group_def <- get_field_definition(schema, "age_group")
+age_group_def <- getFieldDefinition(schema, "age_group")
 
 cat("Field: age_group\n")
 cat("Description:", age_group_def$description, "\n")
@@ -202,7 +202,7 @@ enum_valid_data <- data.frame(
   stringsAsFactors = FALSE
 )
 
-validation_enum_valid <- validate_data_against_schema(enum_valid_data, schema)
+validation_enum_valid <- validateDataAgainstSchema(enum_valid_data, schema)
 cat("Validation Status:", validation_enum_valid$valid, "\n")
 ```
 
@@ -245,7 +245,7 @@ Dynamic enums use ontology terms and their descendants as allowed values. For ex
 
 ```{r dynamic_enum_info}
 # Check ancestry field (dynamic enum using "children")
-ancestry_def <- get_field_definition(schema, "ancestry")
+ancestry_def <- getFieldDefinition(schema, "ancestry")
 
 cat("Field: ancestry\n")
 cat("Description:", ancestry_def$description, "\n")
@@ -255,7 +255,7 @@ cat("  Property:", ancestry_def$ontology$property, "\n")
 cat("\nThis means 'ancestry' should contain DIRECT CHILDREN of HANCESTRO:0004\n\n")
 
 # Check ancestry_details field (dynamic enum using "descendant")
-ancestry_details_def <- get_field_definition(schema, "ancestry_details")
+ancestry_details_def <- getFieldDefinition(schema, "ancestry_details")
 
 cat("Field: ancestry_details\n")
 cat("Description:", ancestry_details_def$description, "\n")
@@ -296,7 +296,7 @@ kable(ancestry_data, caption = "Sample Data with Dynamic Enum Values") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
 
 # Validate
-validation_ancestry <- validate_data_against_schema(ancestry_data, schema)
+validation_ancestry <- validateDataAgainstSchema(ancestry_data, schema)
 cat("\nValidation Status:", validation_ancestry$valid, "\n")
 ```
 
@@ -310,7 +310,7 @@ Many schemas include disease fields with dynamic enums based on disease ontologi
 
 # Check if disease field exists
 if ("disease" %in% names(schema)) {
-  disease_def <- get_field_definition(schema, "disease")
+  disease_def <- getFieldDefinition(schema, "disease")
   
   cat("Field: disease\n")
   cat("Description:", disease_def$description, "\n")
@@ -376,7 +376,7 @@ cat("\nSample with multiple ancestry_details values:\n")
 print(multivalued_data$ancestry_details)
 
 # Validate
-validation_multi <- validate_data_against_schema(multivalued_data, schema)
+validation_multi <- validateDataAgainstSchema(multivalued_data, schema)
 cat("\nValidation Status:", validation_multi$valid, "\n")
 ```
 
@@ -563,7 +563,7 @@ schema_info:
 real_data <- read.csv("path/to/curated_metadata.csv", stringsAsFactors = FALSE)
 
 # Validate
-results <- validate_data_against_schema(real_data, schema)
+results <- validateDataAgainstSchema(real_data, schema)
 
 # Generate report
 if (!results$valid) {
@@ -582,7 +582,7 @@ cat("\n\nSummary:\n")
 cat("Total rows:", nrow(real_data), "\n")
 cat("Total columns:", ncol(real_data), "\n")
 cat("Required fields present:", 
-    all(get_required_fields(schema) %in% colnames(real_data)), "\n")
+    all(getRequiredFields(schema) %in% colnames(real_data)), "\n")
 ```
 
 ---

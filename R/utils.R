@@ -14,10 +14,10 @@ numbers_only <- function(x) !grepl("\\D", x)
 #'
 #' @examples
 #' terms <- c("HP:0001824", "MONDO:0010200", "NCIT:C122328")
-#' get_ontologies(terms = terms)
+#' getOntologies(terms = terms)
 #'
 #' @export
-get_ontologies <- function(terms, delim = ":") {
+getOntologies <- function(terms, delim = ":") {
 
     ontologies <- c()
     for (i in seq_along(terms)) {
@@ -27,6 +27,13 @@ get_ontologies <- function(terms, delim = ":") {
         ontologies[i] <- onto
     }
     return(ontologies)
+}
+
+#' @rdname getOntologies
+#' @export
+get_ontologies <- function(terms, delim = ":") {
+    .Deprecated("getOntologies")
+    getOntologies(terms = terms, delim = delim)
 }
 
 #' Extract ontology from the ontology term id
@@ -55,14 +62,21 @@ strVsplit <- function(terms, delim) {
 #' @export
 #'
 #' @examples
-#' is_obsolete("EFO:0005842")
-#' 
-is_obsolete <- function(term) {
-    onto <- get_ontologies(term)
+#' isObsolete("EFO:0005842")
+#'
+isObsolete <- function(term) {
+    onto <- getOntologies(term)
     ontob <- olsOntology(onto)
     termob <- olsTerm(ontob, term)
     ind <- termob@is_obsolete
     return(ind)
+}
+
+#' @rdname isObsolete
+#' @export
+is_obsolete <- function(term) {
+    .Deprecated("isObsolete")
+    isObsolete(term)
 }
 
 #' Get replacement for obsolete term
@@ -74,16 +88,16 @@ is_obsolete <- function(term) {
 #' @return Character; id of replacement term or "No replacement"
 #' 
 #' @export
-#' 
-#' @examples
-#' get_replacement("EFO:0005842")
 #'
-get_replacement <- function(term) {
-    onto <- get_ontologies(term)
+#' @examples
+#' getReplacement("EFO:0005842")
+#'
+getReplacement <- function(term) {
+    onto <- getOntologies(term)
     ontob <- olsOntology(onto)
     termob <- olsTerm(ontob, term)
     repitem <- termob@term_replaced_by
-    
+
     if (length(repitem) > 0) {
         rep_split <- unlist(strsplit(repitem, "/"))
         raw_id <- rep_split[length(rep_split)]
@@ -92,4 +106,11 @@ get_replacement <- function(term) {
         rep_id <- "No replacement"
     }
     return(rep_id)
+}
+
+#' @rdname getReplacement
+#' @export
+get_replacement <- function(term) {
+    .Deprecated("getReplacement")
+    getReplacement(term)
 }

@@ -10,15 +10,22 @@
 #' delimiter.
 #' 
 #' @examples
-#' format_list(list("red", "yellow", "red", "blue", "", ""), ";")
+#' formatList(list("red", "yellow", "red", "blue", "", ""), ";")
 #'
 #' @export
-format_list <- function(vals_list, delimiter){
+formatList <- function(vals_list, delimiter){
     x <- paste(as.list(unique(vals_list)), collapse= delimiter)
     x <- ifelse(startsWith(x, delimiter), sub(paste("^", delimiter, sep=""), "", x), x)
     clean_list <- ifelse(endsWith(x, delimiter), sub(paste(delimiter, "$", sep=""), "", x), x)
-    
+
     return(clean_list)
+}
+
+#' @rdname formatList
+#' @export
+format_list <- function(vals_list, delimiter){
+    .Deprecated("formatList")
+    formatList(vals_list, delimiter)
 }
 
 #' Map original values to curated values and curated ontology term ids (SUB-FUNCTION)
@@ -38,13 +45,20 @@ format_list <- function(vals_list, delimiter){
 #'
 #' @examples
 #' ex_df <- data.frame(original_value = c("gold", "gold"), curated_ontology = c("Yellow", "Gold"), curated_ontology_term_id = c("123", "456"))
-#' map_values(ex_df, "curated_ontology", "<;>", "gold")
+#' mapValues(ex_df, "curated_ontology", "<;>", "gold")
+#' @export
+mapValues <- function(new_map, col, delimiter, y){
+    index <- grep(paste("^",y,"$",sep=""), new_map[,"original_value"], fixed=F)
+    mapped_vals <- formatList(compact(as.list(new_map[index, col])), delimiter)
+
+    return(mapped_vals)
+}
+
+#' @rdname mapValues
 #' @export
 map_values <- function(new_map, col, delimiter, y){
-    index <- grep(paste("^",y,"$",sep=""), new_map[,"original_value"], fixed=F)
-    mapped_vals <- format_list(list_drop_empty(as.list(new_map[index, col])), delimiter)
-    
-    return(mapped_vals)
+    .Deprecated("mapValues")
+    mapValues(new_map, col, delimiter, y)
 }
 
 #' Update a column of curated data using a new mapping schema
@@ -81,13 +95,13 @@ updateCuratedData <- function(curated_data, map, column, delimiter){
         new_terms <- list()
         new_term_ids <- list()
         # Search for replacement terms in the ontology map
-        new_terms <- lapply(original_terms, function(y) map_values(map, "curated_ontology", delimiter, y))
-        new_term_ids <- lapply(original_terms, function(y) map_values(map, "curated_ontology_term_id", delimiter, y))
-        new_terms <- format_list(list_drop_empty(new_terms), delimiter)
-        new_term_ids <- format_list(list_drop_empty(new_term_ids), delimiter)
+        new_terms <- lapply(original_terms, function(y) mapValues(map, "curated_ontology", delimiter, y))
+        new_term_ids <- lapply(original_terms, function(y) mapValues(map, "curated_ontology_term_id", delimiter, y))
+        new_terms <- formatList(compact(new_terms), delimiter)
+        new_term_ids <- formatList(compact(new_term_ids), delimiter)
         # Concatenate new lists on delimiter to create curated value
-        curated_data[x,new_col] <- format_list(as.list(unlist(strsplit(new_terms, delimiter))), delimiter)
-        curated_data[x,paste(new_col, "ontology_term_id", sep="_")] <- format_list(as.list(unlist(strsplit(new_term_ids, delimiter))), delimiter)
+        curated_data[x,new_col] <- formatList(as.list(unlist(strsplit(new_terms, delimiter))), delimiter)
+        curated_data[x,paste(new_col, "ontology_term_id", sep="_")] <- formatList(as.list(unlist(strsplit(new_term_ids, delimiter))), delimiter)
         if(x %% 10000==0){print(x)}
     }
     

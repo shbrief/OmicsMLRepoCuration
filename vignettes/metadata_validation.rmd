@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-This vignette demonstrates how to validate metadata against the OmicsMLRepo schema using the `validate_data_against_schema()` function. The validation system checks for:
+This vignette demonstrates how to validate metadata against the OmicsMLRepo schema using the `validateDataAgainstSchema()` function. The validation system checks for:
 
 - **Required fields**: Ensures all mandatory columns are present
 - **Data types**: Verifies correct column types (character, integer, numeric, etc.)
@@ -41,7 +41,7 @@ library(OmicsMLRepoCuration)
 # Load the schema from YAML file
 schema_file <- system.file("schema", "cmd_data_dictionary.yaml", 
                           package = "OmicsMLRepoCuration")
-schema <- load_metadata_schema(schema_file)
+schema <- loadMetadataSchema(schema_file)
 
 cat("Schema loaded with", length(schema) - 1, "fields\n")
 ```
@@ -71,7 +71,7 @@ valid_data <- data.frame(
 )
 
 # Validate
-result <- validate_data_against_schema(valid_data, schema)
+result <- validateDataAgainstSchema(valid_data, schema)
 
 cat("Validation result:", result$valid, "\n")
 cat("Errors:", length(result$errors), "\n")
@@ -88,7 +88,7 @@ invalid_data <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(invalid_data, schema)
+result <- validateDataAgainstSchema(invalid_data, schema)
 
 cat("Validation result:", result$valid, "\n")
 cat("\nErrors detected:\n")
@@ -116,7 +116,7 @@ type_mismatch_data <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(type_mismatch_data, schema)
+result <- validateDataAgainstSchema(type_mismatch_data, schema)
 
 if (length(result$warnings) > 0) {
   cat("Warnings detected:\n")
@@ -149,7 +149,7 @@ enum_valid_data <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(enum_valid_data, schema)
+result <- validateDataAgainstSchema(enum_valid_data, schema)
 
 cat("Valid enum values - Warnings:", length(result$warnings), "\n")
 ```
@@ -172,7 +172,7 @@ enum_invalid_data <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(enum_invalid_data, schema)
+result <- validateDataAgainstSchema(enum_invalid_data, schema)
 
 if (length(result$warnings) > 0) {
   cat("Warnings for invalid enum values:\n")
@@ -201,7 +201,7 @@ smoker_valid <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(smoker_valid, schema)
+result <- validateDataAgainstSchema(smoker_valid, schema)
 
 cat("Valid multiple smoker values:\n")
 cat("  Errors (missing required fields):", length(result$errors), "\n")
@@ -224,7 +224,7 @@ smoker_invalid <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(smoker_invalid, schema)
+result <- validateDataAgainstSchema(smoker_invalid, schema)
 
 cat("Invalid multiple smoker values:\n")
 if (length(result$warnings) > 0) {
@@ -249,7 +249,7 @@ feces_valid <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(feces_valid, schema)
+result <- validateDataAgainstSchema(feces_valid, schema)
 
 cat("Valid multiple feces_phenotype values:\n")
 cat("  Errors (missing required fields):", length(result$errors), "\n")
@@ -272,7 +272,7 @@ feces_invalid <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(feces_invalid, schema)
+result <- validateDataAgainstSchema(feces_invalid, schema)
 
 cat("Invalid multiple feces_phenotype values:\n")
 if (length(result$warnings) > 0) {
@@ -305,7 +305,7 @@ feces_paired_valid <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(feces_paired_valid, schema)
+result <- validateDataAgainstSchema(feces_paired_valid, schema)
 
 cat("Valid combined feces phenotype-value pairs:\n")
 cat("  Total warnings:", length(result$warnings), "\n")
@@ -335,7 +335,7 @@ feces_paired_mismatch <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(feces_paired_mismatch, schema)
+result <- validateDataAgainstSchema(feces_paired_mismatch, schema)
 
 cat("Count mismatch errors:\n")
 if (length(result$warnings) > 0) {
@@ -362,7 +362,7 @@ feces_paired_missing <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(feces_paired_missing, schema)
+result <- validateDataAgainstSchema(feces_paired_missing, schema)
 
 cat("Missing partner field errors:\n")
 if (length(result$warnings) > 0) {
@@ -395,7 +395,7 @@ whitespace_data <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(whitespace_data, schema)
+result <- validateDataAgainstSchema(whitespace_data, schema)
 
 cat("Whitespace handling:\n")
 cat("  Field validation warnings:", length(result$warnings), "\n")
@@ -431,7 +431,7 @@ extra_cols_data <- data.frame(
   stringsAsFactors = FALSE
 )
 
-result <- validate_data_against_schema(extra_cols_data, schema)
+result <- validateDataAgainstSchema(extra_cols_data, schema)
 
 cat("Validation result:", result$valid, "\n\n")
 
@@ -488,7 +488,7 @@ full_data <- data.frame(
 )
 
 # Validate
-result <- validate_data_against_schema(full_data, schema)
+result <- validateDataAgainstSchema(full_data, schema)
 
 # Display results
 cat("=== Validation Summary ===\n")
@@ -527,7 +527,7 @@ Always validate your data before submitting:
 my_data <- read.csv("my_metadata.csv", stringsAsFactors = FALSE)
 
 # Validate
-result <- validate_data_against_schema(my_data, schema)
+result <- validateDataAgainstSchema(my_data, schema)
 
 # Check for issues
 if (!result$valid || length(result$warnings) > 0) {
@@ -545,13 +545,13 @@ Use helper functions to explore the schema:
 
 ```{r schema-exploration}
 # Get all required fields
-required_fields <- get_required_fields(schema)
+required_fields <- getRequiredFields(schema)
 cat("Required fields:\n")
 cat(paste("  -", required_fields[1:5], collapse = "\n"), "\n")
 cat("  ... and", length(required_fields) - 5, "more\n\n")
 
 # Get field definition
-field_def <- get_field_definition(schema, "smoker")
+field_def <- getFieldDefinition(schema, "smoker")
 cat("Smoker field definition:\n")
 cat("  Type:", field_def$col_class, "\n")
 cat("  Required:", field_def$required, "\n")
@@ -599,7 +599,7 @@ The validation system provides comprehensive checking for:
 4. **Static enums** - checks values against controlled vocabularies
 5. **Multiple values with delimiters** - validates each component of multi-value fields
 
-Use `validate_data_against_schema()` regularly during data preparation to catch issues early and ensure data quality.
+Use `validateDataAgainstSchema()` regularly during data preparation to catch issues early and ensure data quality.
 
 ## Session Info
 

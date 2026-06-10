@@ -42,7 +42,7 @@ splitColumnBySep_file(
 
 \item{keep_delim}{Logical. If TRUE and both delim and sep provided, preserve delimiter in output}
 
-\item{file_sep}{Character(1). Field separator for reading/writing file. Default is tab "\t"}
+\item{file_sep}{Character(1). Field separator for reading/writing file. Default is tab (\code{"\\t"}).}
 }
 \value{
 Invisibly returns the modified data frame

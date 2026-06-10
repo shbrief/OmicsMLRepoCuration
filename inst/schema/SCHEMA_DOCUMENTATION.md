@@ -240,10 +240,10 @@ library(OmicsMLRepoCuration)
 # Load schema from package
 schema_file <- system.file("schema", "cmd_data_dictionary.yaml", 
                           package = "OmicsMLRepoCuration")
-schema <- load_metadata_schema(schema_file)
+schema <- loadMetadataSchema(schema_file)
 
 # Or load from file path
-schema <- load_metadata_schema("inst/schema/cmd_data_dictionary.yaml")
+schema <- loadMetadataSchema("inst/schema/cmd_data_dictionary.yaml")
 ```
 
 ### Validating Data
@@ -253,7 +253,7 @@ schema <- load_metadata_schema("inst/schema/cmd_data_dictionary.yaml")
 data <- read.csv("my_sample_data.tsv", sep = "\t")
 
 # Validate against schema
-result <- validate_data_against_schema(data, schema)
+result <- validateDataAgainstSchema(data, schema)
 
 # Check results
 if (result$valid) {
@@ -283,23 +283,23 @@ if (result$valid) {
 
 ```r
 # Get all required fields
-required_fields <- get_required_fields(schema)
+required_fields <- getRequiredFields(schema)
 
 # Get field definition
-field_def <- get_field_definition(schema, "age")
+field_def <- getFieldDefinition(schema, "age")
 
 # Get fields by category
-disease_fields <- get_fields_by_category(schema, "disease")
+disease_fields <- getFieldsByCategory(schema, "disease")
 
 # Get all categories
-categories <- get_all_categories(schema)
+categories <- getAllCategories(schema)
 ```
 
 ### Creating a Template
 
 ```r
 # Generate empty data frame with correct structure
-template <- schema_to_template_df(schema, "sample_id")
+template <- schemaToTemplateDf(schema, "sample_id")
 ```
 
 ## Validation Rules
@@ -384,13 +384,13 @@ library(OmicsMLRepoCuration)
 dict_csv <- read.csv("inst/schema/cmd_data_dictionary.csv")
 
 # Generate YAML schema
-table_to_yaml_schema(
+tableToYamlSchema(
   dict_csv,
   output_file = "inst/schema/cmd_data_dictionary.yaml"
 )
 
 # Generate LinkML schema (optional)
-table_to_linkml_schema(
+tableToLinkmlSchema(
   dict_csv,
   output_file = "inst/schema/cmd_data_dictionary_linkml.yaml"
 )
@@ -421,7 +421,7 @@ devtools::install()
 ### Getting Help
 
 1. **Check the schema**: View field definitions in `cmd_data_dictionary.csv`
-2. **Use query functions**: `get_field_definition()`, `get_required_fields()`
+2. **Use query functions**: `getFieldDefinition()`, `getRequiredFields()`
 3. **Check examples**: See test files in the package repository
 4. **Read validation messages carefully**: They indicate exactly what's wrong
 
