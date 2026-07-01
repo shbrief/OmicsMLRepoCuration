@@ -390,7 +390,7 @@ tableToLinkmlSchema <- function(schema_table,
     id = schema_id,
     name = schema_name,
     version = schema_version,
-    last_updated = as.character(Sys.Date()),
+    last_updated_on = as.character(Sys.Date()),
     description = schema_description,
     prefixes = list(
       linkml = "https://w3id.org/linkml/",
@@ -465,10 +465,29 @@ tableToLinkmlSchema <- function(schema_table,
         allowed_vals <- strsplit(as.character(row$allowedvalues), "\\|")[[1]]
         allowed_vals <- trimws(allowed_vals)
         
-        # Create permissible_values as named list with NULL values
-        # This will write as "value: {}" in YAML which LinkML accepts
+        # Align ontology term ids from the `static.enum` column (pipe-separated,
+        # positional) so each permissible value carries its verified `meaning`.
+        # A blank/missing id leaves that value's meaning null.
+        meanings <- rep(NA_character_, length(allowed_vals))
+        if ("static.enum" %in% names(row)) {
+          se <- row[["static.enum"]]
+          if (!is.na(se) && !se %in% c("", "NA")) {
+            ids <- trimws(strsplit(as.character(se), "\\|")[[1]])
+            n <- min(length(ids), length(allowed_vals))
+            if (n > 0) meanings[seq_len(n)] <- ids[seq_len(n)]
+          }
+        }
+
+        # value -> {meaning: <id>} when an id exists, else value -> NULL
+        # (LinkML accepts a bare permissible value).
         permissible_values <- setNames(
-          rep(list(NULL), length(allowed_vals)),
+          lapply(seq_along(allowed_vals), function(k) {
+            if (!is.na(meanings[k]) && !meanings[k] %in% c("", "NA")) {
+              list(meaning = meanings[k])
+            } else {
+              NULL
+            }
+          }),
           allowed_vals
         )
         
@@ -478,27 +497,50 @@ tableToLinkmlSchema <- function(schema_table,
       }
     }
     
-    # Handle dynamic enums (ontology-based)
+    # Handle dynamic enums (ontology-based): emit a LinkML `reachable_from`
+    # dynamic enum so ontology-grounding consumers (e.g. metacurator, SPEC 070)
+    # can bind the field to its ontology branch. One `include: reachable_from`
+    # entry per root (roots may span ontologies, e.g. NCIT + EFO); LinkML unions
+    # them. Ontology-key is derived from each root's CURIE prefix (NCIT:... ->
+    # obo:ncit). A dynamic + static field (corpus.type "dynamic_enum;static_enum")
+    # keeps any permissible_values already built from `allowedvalues`.
     if ("dynamic.enum" %in% names(row) && !is.na(row$dynamic.enum) && row$dynamic.enum != "") {
-      # Parse ontology roots
-      ontology_roots <- strsplit(as.character(row$dynamic.enum), ";")[[1]]
-      ontology_roots <- trimws(ontology_roots)
-      
-      # Use string range instead of enum for dynamic enums
-      slot_def$range <- "string"
-      
-      # Add annotations for ontology mapping
-      slot_def$annotations <- list(
-        ontology_roots = paste(ontology_roots, collapse = ", ")
-      )
-      
-      if ("dynamic.enum.property" %in% names(row) && !is.na(row$dynamic.enum.property) && row$dynamic.enum.property != "") {
-        slot_def$annotations$ontology_property <- row$dynamic.enum.property
+      ontology_roots <- trimws(strsplit(as.character(row$dynamic.enum), ";")[[1]])
+      ontology_roots <- ontology_roots[!ontology_roots %in% c("", "NA")]
+
+      # `children` -> direct subclasses only; anything else -> transitive descendants.
+      prop <- "descendant"
+      if ("dynamic.enum.property" %in% names(row) &&
+          !is.na(row[["dynamic.enum.property"]]) &&
+          !row[["dynamic.enum.property"]] %in% c("", "NA")) {
+        prop <- row[["dynamic.enum.property"]]
       }
-      
-      # Add a comment to description about expected values
+      is_direct <- identical(prop, "children")
+
+      includes <- lapply(ontology_roots, function(root) {
+        prefix <- sub(":.*$", "", root)
+        list(reachable_from = list(
+          source_ontology = paste0("obo:", tolower(prefix)),
+          source_nodes = list(root),
+          relationship_types = list("rdfs:subClassOf"),
+          is_direct = is_direct
+        ))
+      })
+
+      enum_name <- paste0(field_name, "_enum")
+      enum_def <- list(include = includes)
+      # Preserve static permissible_values already built from `allowedvalues`.
+      if (!is.null(enums[[enum_name]]) && !is.null(enums[[enum_name]]$permissible_values)) {
+        enum_def$permissible_values <- enums[[enum_name]]$permissible_values
+      }
+      enums[[enum_name]] <- enum_def
+      slot_def$range <- enum_name
+
+      # Human-readable hint alongside the machine-readable reachable_from.
       slot_def$comments <- list(
-        paste("Values should be descendants of:", paste(ontology_roots, collapse = ", "))
+        paste0("Values should be ",
+               if (is_direct) "direct children" else "descendants",
+               " of: ", paste(ontology_roots, collapse = ", "))
       )
     }
     

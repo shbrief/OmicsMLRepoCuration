@@ -48,7 +48,7 @@ ss <- googledrive::as_id(url)
 dd <- googlesheets4::read_sheet(ss = ss, sheet = "cmd")
 
 ## Official copy
-cmd <- readr::read_csv("~/Microbiome/curatedMetagenomicDataCuration/inst/extdata/cmd_data_dictionary.csv")
+cmd <- readr::read_csv("~/Projects/cMD_architecture/curatedMetagenomicDataCuration/inst/extdata/cmd_data_dictionary.csv")
 cmd <- cmd[order(cmd$col.name),]
 ```
 
@@ -75,10 +75,29 @@ tableToYamlSchema(dd,
                      output_file = file.path(schema_dir, "cmd_data_dictionary.yaml"))
 
 ## csv to linkml
-tableToLinkmlSchema(dd, 
+tableToLinkmlSchema(dd,
                        schema_version = "0.0.11",
                        output_file = file.path(schema_dir, "cmd_data_dictionary_linkml.yaml"))
 ```
+
+The LinkML output is ontology-grounding-ready, so downstream tools (e.g. the
+`metacurator` grounding engine) can bind fields to their ontology branches
+directly. Two data-dictionary columns drive this:
+
+- **`static.enum`** — the pipe-separated ontology term ids are written as LinkML
+  `meaning` CURIEs on each permissible value. For example `body_site`
+  (`allowedvalues = feces|oral cavity|...`, `static.enum = UBERON:0001988|...`)
+  becomes an enum whose `feces` value carries `meaning: UBERON:0001988`.
+- **`dynamic.enum`** — the ontology root(s) are written as a LinkML
+  `reachable_from` dynamic enum (one `include: reachable_from` per root, so
+  multi-ontology roots union). `dynamic.enum.property = children` yields direct
+  subclasses (`is_direct: true`); anything else yields transitive descendants.
+  For example `disease` (`dynamic.enum = NCIT:C7057;EFO:0000408`) binds to both
+  the NCIT and EFO branches.
+
+Fields whose `static.enum` id has no matching label (e.g. a bare id on a
+`dynamic_enum;static_enum` field) cannot be expressed as a permissible value and
+are omitted; give the value a label in `allowedvalues` to represent it.
 
 ```{r echo=FALSE, eval=FALSE}
 ## Local (Google Sheet) to GitHub sync.
