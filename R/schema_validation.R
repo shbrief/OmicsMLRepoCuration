@@ -475,9 +475,12 @@ validateDataAgainstSchema <- function(data, schema,
               individual_values <- .tokenizeCells(cell_value, delimiter,
                                                   wildcard_values)
 
-              # Check each individual value against the pattern
+              # Check each individual value against the pattern. Anchor to the
+              # whole token (^(...)$) so a partial/substring match does not pass;
+              # mirrors the Python validator (re.compile("^(?:pattern)$")).
+              anchored <- paste0("^(", pattern, ")$")
               for (ind_val in individual_values) {
-                if (!grepl(pattern, ind_val)) {
+                if (!grepl(anchored, ind_val)) {
                   validation_results$warnings <- c(
                     validation_results$warnings,
                     paste0("Field '", col, "' row ", val_idx, 
@@ -519,7 +522,8 @@ validateDataAgainstSchema <- function(data, schema,
             non_na_values <- non_na_values[!non_na_values %in% wildcard_values]
           }
           if (length(non_na_values) > 0) {
-            invalid <- !grepl(pattern, non_na_values)
+            # Anchor to the whole value (see multi-valued branch above).
+            invalid <- !grepl(paste0("^(", pattern, ")$"), non_na_values)
             if (any(invalid)) {
               validation_results$warnings <- c(
                 validation_results$warnings,

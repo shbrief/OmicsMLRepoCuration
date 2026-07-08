@@ -32,11 +32,11 @@ addDynamicEnumNodes <- function(curated_col, dd) {
 
     ## Find the top nodes for dynamic enum
     topNodes <- commonNodes(ids = terms, dbs = onto)
-    res <- paste0(topNodes$ontology_term_id, collapse = ";")
+    res <- paste0(topNodes$ontology_term_id, collapse = "|")
 
     ## Add dynamic enum node(s) to the data dictionary
     dd$dynamic_enum[ind] <- res
-    dd$dynamic_enum_property[ind] <- "descendent"
+    dd$dynamic_enum_property[ind] <- "descendant"
 
     return(dd)
 }

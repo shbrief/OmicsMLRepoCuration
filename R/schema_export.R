@@ -182,7 +182,7 @@ exportSchemaToCsv <- function(schema, output_file = NULL) {
 #'   description = "Reported disease type",
 #'   allowedvalues = NA,
 #'   static.enum = NA,
-#'   dynamic.enum = "NCIT:C7057;EFO:0000408",
+#'   dynamic.enum = "NCIT:C7057|EFO:0000408",
 #'   dynamic.enum.property = "descendant",
 #'   delimiter = ";",
 #'   separater = NA,
@@ -240,8 +240,10 @@ tableToYamlSchema <- function(schema_table,
       is_enum <- FALSE
       if ("corpus.type" %in% names(row) && !is.na(row$corpus.type)) {
         corpus_type <- as.character(row$corpus.type)
-        # Only split by | when corpus.type indicates it's an enum
-        is_enum <- corpus_type %in% c("custom_enum", "static_enum", "binary")
+        # Only split by | when corpus.type indicates it's an enum. Token-aware so
+        # compound types (e.g. "dynamic_enum|static_enum") are recognized.
+        is_enum <- any(trimws(strsplit(corpus_type, "\\|")[[1]]) %in%
+                         c("custom_enum", "static_enum", "binary"))
       }
       
       if (is_enum) {
@@ -269,7 +271,7 @@ tableToYamlSchema <- function(schema_table,
     
     # Handle dynamic enum ontology
     if ("dynamic.enum" %in% names(row) && !is.na(row$dynamic.enum) && row$dynamic.enum != "") {
-      ontology_roots <- strsplit(as.character(row$dynamic.enum), ";")[[1]]
+      ontology_roots <- strsplit(as.character(row$dynamic.enum), "\\|")[[1]]
       ontology_roots <- trimws(ontology_roots)
       
       # Add roots information
@@ -505,7 +507,7 @@ tableToLinkmlSchema <- function(schema_table,
     # obo:ncit). A dynamic + static field (corpus.type "dynamic_enum;static_enum")
     # keeps any permissible_values already built from `allowedvalues`.
     if ("dynamic.enum" %in% names(row) && !is.na(row$dynamic.enum) && row$dynamic.enum != "") {
-      ontology_roots <- trimws(strsplit(as.character(row$dynamic.enum), ";")[[1]])
+      ontology_roots <- trimws(strsplit(as.character(row$dynamic.enum), "\\|")[[1]])
       ontology_roots <- ontology_roots[!ontology_roots %in% c("", "NA")]
 
       # `children` -> direct subclasses only; anything else -> transitive descendants.
